@@ -258,7 +258,7 @@
         } else if (msg.indexOf('!borrar') === 0) {
           const target = msg.split(' ')[1] ? msg.split(' ')[1].replace('@','') : user;
           removeDrawing(isAdmin ? target : user);
-        } else if (msg === '!testpixel' && isAdmin) { toggleTest(); }
+        } else if (msg === '!test' && isAdmin) { toggleTest(); }
         else if (msg === '!fin' && isAdmin) { toggleRain(); }
         else if (msg.indexOf('!velocidad ') === 0 && isAdmin) {
              const level = msg.split(' ')[1];
