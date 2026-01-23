@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V15 - Bigger & Smooth</title>
+  <title>Overlay Alpha Gold V16 - Loop Jump Logic</title>
   <style>
     html, body { 
       margin: 0; padding: 0; 
@@ -34,14 +34,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      /* ANTES: 150px -> AHORA: 165px (+10%) */
+      /* Tamaño aumentado un 10% */
       width: 165px;
       will-change: transform; 
     }
 
     canvas { 
       image-rendering: pixelated; 
-      /* ANTES: 150px -> AHORA: 165px (+10%) */
+      /* Tamaño aumentado un 10% */
       width: 165px; height: 165px; 
       background: transparent; 
       transition: transform 0.3s; 
@@ -66,9 +66,8 @@
     .nick { 
       color: white; 
       font-weight: 900;
-      /* ANTES: 20px -> AHORA: 22px (+10%) */
+      /* Tamaño aumentado un 10% */
       font-size: 22px; 
-      /* Aumentamos ancho para que nombres largos no se corten */
       width: 280px; 
       text-align: center;
       margin-top: 2px;
@@ -108,16 +107,12 @@
     }
     
     .showcase .nick {
-       /* Ajustado a 33px para compensar la reducción de escala y que se vea igual que antes */
+       /* Ajuste de escala para el baile */
        font-size: 33px !important;
        text-shadow: 3px 3px 0 #000, 0 0 10px rgba(0,0,0,0.5);
        margin-top: 15px;
     }
 
-    /* HEMOS AJUSTADO LA ESCALA AQUÍ
-       Como el dibujo base es más grande, reducimos la escala de 4.5 a 4.1
-       para que el tamaño final en pantalla sea el mismo de siempre.
-    */
     @keyframes superDance {
       0%   { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
       25%  { transform: translate(-50%, -50%) scale(4.4) rotate(-5deg); } 
@@ -206,7 +201,16 @@
             // Movimiento suavizado con Delta Time
             d.x += (d.speed * globalSpeedMultiplier) * dt;
             
+            // === LÓGICA DE VUELTAS (LOOPS) ===
+            // Si supera 2200 (fuera de pantalla derecha), reiniciamos
             if (d.x > 2200) { 
+              d.loops++; // Contamos una vuelta completa
+              
+              // Si ya dio 1 vuelta (pasó la pantalla 1 vez), le quitamos el salto
+              if (d.loops >= 1) {
+                  d.el.classList.remove('jumping');
+              }
+
               let minX = -200;
               drawings.forEach(other => { if (other.lane === d.lane && other.x < minX) minX = other.x; });
               d.x = minX - 350; 
@@ -310,8 +314,9 @@
             if (!isTest) itemEl.classList.add('waiting');
         }
         if (!isTest && !isSub) {
+            // Usuarios normales: Empiezan saltando
             itemEl.classList.add('jumping');
-            setTimeout(() => { if (itemEl) itemEl.classList.remove('jumping'); }, 16000);
+            // YA NO HAY SETTIMEOUT AQUÍ, se controla en animate()
         }
 
         if (testMode && !isTest) itemEl.classList.add('hidden');
@@ -325,7 +330,22 @@
         itemEl.style.zIndex = Z_INDEXES[laneIdx]; 
         document.getElementById('container').appendChild(itemEl);
 
-        let obj = { el: itemEl, user, code: fullCode, lane: laneIdx, speed: SPEEDS[laneIdx], y: LANES[laneIdx], x: forceX || -400, isTest, dying: false, rainOriginX: 0, rainSpeed: 1, rainPhase: 0 };
+        let obj = { 
+            el: itemEl, 
+            user, 
+            code: fullCode, 
+            lane: laneIdx, 
+            speed: SPEEDS[laneIdx], 
+            y: LANES[laneIdx], 
+            x: forceX || -400, 
+            isTest, 
+            dying: false, 
+            rainOriginX: 0, 
+            rainSpeed: 1, 
+            rainPhase: 0,
+            loops: 0 // <--- NUEVA PROPIEDAD: Contador de vueltas
+        };
+
         if (forceX === undefined) {
           let min = -200;
           drawings.forEach(d => { if(d.lane === laneIdx && d.x < min) min = d.x; });
@@ -351,8 +371,14 @@
           let min = -200;
           drawings.forEach(d => { if(d.lane === current.lane && d.x < min) min = d.x; });
           current.x = min - 350;
+          
+          // === LÓGICA DE SUBS ===
+          // El sub ya bailó, ahora entra al carril saltando
           current.el.classList.add('jumping');
-          setTimeout(() => { if (current.el) current.el.classList.remove('jumping'); }, 16000); 
+          current.loops = 0; // Se asegura de que empiece con 0 vueltas para que salte todo el recorrido
+          
+          // YA NO HAY SETTIMEOUT DE 16s
+          
           isShowcaseBusy = false;
           processQueue();
         }, 10000); 
