@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V16 - Loop Jump Logic</title>
+  <title>Overlay Alpha Gold V17 - Random Lane Logic</title>
   <style>
     html, body { 
       margin: 0; padding: 0; 
@@ -34,14 +34,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      /* Tamaño aumentado un 10% */
       width: 165px;
       will-change: transform; 
     }
 
     canvas { 
       image-rendering: pixelated; 
-      /* Tamaño aumentado un 10% */
       width: 165px; height: 165px; 
       background: transparent; 
       transition: transform 0.3s; 
@@ -66,7 +64,6 @@
     .nick { 
       color: white; 
       font-weight: 900;
-      /* Tamaño aumentado un 10% */
       font-size: 22px; 
       width: 280px; 
       text-align: center;
@@ -107,7 +104,6 @@
     }
     
     .showcase .nick {
-       /* Ajuste de escala para el baile */
        font-size: 33px !important;
        text-shadow: 3px 3px 0 #000, 0 0 10px rgba(0,0,0,0.5);
        margin-top: 15px;
@@ -153,7 +149,8 @@
     let activeCodes = new Set(); 
 
     // === VELOCIDAD ===
-    let globalSpeedMultiplier = 0.60; 
+    // Modificado: reducido un 10% (0.60 -> 0.54)
+    let globalSpeedMultiplier = 0.54; 
 
     const LANES = [10, 40, 70, 100]; 
     const SPEEDS = [2, 3.5, 2.5, 4.5]; 
@@ -211,8 +208,22 @@
                   d.el.classList.remove('jumping');
               }
 
+              // --- NUEVA LÓGICA ALEATORIA ---
+              // Asignamos una nueva "carril" (lane) al azar entre 0 y 3
+              const newLaneIdx = Math.floor(Math.random() * LANES.length);
+              
+              // Actualizamos las propiedades del dibujo a las de la nueva carril
+              d.lane = newLaneIdx;
+              d.y = LANES[newLaneIdx];
+              d.speed = SPEEDS[newLaneIdx];
+              d.el.style.zIndex = Z_INDEXES[newLaneIdx];
+
+              // Calculamos posición X basada en la NUEVA carril para que no se superpongan
               let minX = -200;
-              drawings.forEach(other => { if (other.lane === d.lane && other.x < minX) minX = other.x; });
+              drawings.forEach(other => { 
+                  // Buscamos el último en la fila de la NUEVA carril
+                  if (other.lane === d.lane && other.x < minX) minX = other.x; 
+              });
               d.x = minX - 350; 
             }
             d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
@@ -262,7 +273,7 @@
         else if (msg === '!fin' && isAdmin) { toggleRain(); }
         else if (msg.indexOf('!velocidad ') === 0 && isAdmin) {
              const level = msg.split(' ')[1];
-             if (level === '1') { globalSpeedMultiplier = 0.60; } 
+             if (level === '1') { globalSpeedMultiplier = 0.54; } // Ajustado a nueva base
              else if (level === '2') { globalSpeedMultiplier = 1.0; }
         }
       }
@@ -316,7 +327,6 @@
         if (!isTest && !isSub) {
             // Usuarios normales: Empiezan saltando
             itemEl.classList.add('jumping');
-            // YA NO HAY SETTIMEOUT AQUÍ, se controla en animate()
         }
 
         if (testMode && !isTest) itemEl.classList.add('hidden');
@@ -343,7 +353,7 @@
             rainOriginX: 0, 
             rainSpeed: 1, 
             rainPhase: 0,
-            loops: 0 // <--- NUEVA PROPIEDAD: Contador de vueltas
+            loops: 0
         };
 
         if (forceX === undefined) {
@@ -368,16 +378,14 @@
         current.el.classList.add('showcase');
         setTimeout(() => {
           current.el.classList.remove('showcase');
+          
+          // Re-calcular posición para la salida del showcase
           let min = -200;
           drawings.forEach(d => { if(d.lane === current.lane && d.x < min) min = d.x; });
           current.x = min - 350;
           
-          // === LÓGICA DE SUBS ===
-          // El sub ya bailó, ahora entra al carril saltando
           current.el.classList.add('jumping');
-          current.loops = 0; // Se asegura de que empiece con 0 vueltas para que salte todo el recorrido
-          
-          // YA NO HAY SETTIMEOUT DE 16s
+          current.loops = 0; 
           
           isShowcaseBusy = false;
           processQueue();
