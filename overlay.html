@@ -150,10 +150,10 @@
 
     // === VELOCIDAD ===
     // Modificado: reducido un 10% (0.60 -> 0.54)
-    let globalSpeedMultiplier = 0.60; 
+    let globalSpeedMultiplier = 0.54; 
 
     const LANES = [10, 40, 70, 100]; 
-    const SPEEDS = [1, 1.75, 1.25, 1.96]; 
+    const SPEEDS = [2, 3.5, 2.5, 4.5]; 
     const Z_INDEXES = [5, 20, 10, 30];
 
     // === FIX STUTTER (DELTA TIME) ===
@@ -273,7 +273,7 @@
         else if (msg === '!fin' && isAdmin) { toggleRain(); }
         else if (msg.indexOf('!velocidad ') === 0 && isAdmin) {
              const level = msg.split(' ')[1];
-             if (level === '1') { globalSpeedMultiplier = 0.60; } // Ajustado a nueva base
+             if (level === '1') { globalSpeedMultiplier = 0.54; } // Ajustado a nueva base
              else if (level === '2') { globalSpeedMultiplier = 1.0; }
         }
       }
