@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V17 - Random Lane Logic</title>
+  <title>Overlay Alpha Gold V19 - Admin Wipe User</title>
   <style>
     html, body { 
       margin: 0; padding: 0; 
@@ -149,14 +149,12 @@
     let activeCodes = new Set(); 
 
     // === VELOCIDAD ===
-    // Modificado: reducido un 10% (0.60 -> 0.54)
     let globalSpeedMultiplier = 0.54; 
 
     const LANES = [10, 40, 70, 100]; 
     const SPEEDS = [2, 3.5, 2.5, 4.5]; 
     const Z_INDEXES = [5, 20, 10, 30];
 
-    // === FIX STUTTER (DELTA TIME) ===
     let lastTime = performance.now();
 
     function animate(currentTime) {
@@ -164,7 +162,6 @@
       
       const dt = (currentTime - lastTime) / 16.666;
       lastTime = currentTime;
-
       const now = Date.now(); 
 
       for (let i = drawings.length - 1; i >= 0; i--) {
@@ -195,33 +192,22 @@
             if (d.y > 1200) { d.el.remove(); activeCodes.delete(d.code); drawings.splice(i, 1); continue; }
         } else {
             d.el.style.opacity = 1;
-            // Movimiento suavizado con Delta Time
             d.x += (d.speed * globalSpeedMultiplier) * dt;
             
-            // === LÓGICA DE VUELTAS (LOOPS) ===
-            // Si supera 2200 (fuera de pantalla derecha), reiniciamos
             if (d.x > 2200) { 
-              d.loops++; // Contamos una vuelta completa
-              
-              // Si ya dio 1 vuelta (pasó la pantalla 1 vez), le quitamos el salto
+              d.loops++; 
               if (d.loops >= 1) {
                   d.el.classList.remove('jumping');
               }
 
-              // --- NUEVA LÓGICA ALEATORIA ---
-              // Asignamos una nueva "carril" (lane) al azar entre 0 y 3
               const newLaneIdx = Math.floor(Math.random() * LANES.length);
-              
-              // Actualizamos las propiedades del dibujo a las de la nueva carril
               d.lane = newLaneIdx;
               d.y = LANES[newLaneIdx];
               d.speed = SPEEDS[newLaneIdx];
               d.el.style.zIndex = Z_INDEXES[newLaneIdx];
 
-              // Calculamos posición X basada en la NUEVA carril para que no se superpongan
               let minX = -200;
               drawings.forEach(other => { 
-                  // Buscamos el último en la fila de la NUEVA carril
                   if (other.lane === d.lane && other.x < minX) minX = other.x; 
               });
               d.x = minX - 350; 
@@ -251,11 +237,13 @@
       ws.onmessage = (e) => handleMessage(e.data);
     }
 
+    // === MANEJADOR DE MENSAJES ===
     function handleMessage(data) {
       if (data.indexOf('PING') !== -1) { ws.send('PONG :tmi.twitch.tv'); return; }
       if (data.indexOf('PRIVMSG') !== -1) {
         const parts = data.split('PRIVMSG #' + CHANNEL.toLowerCase() + ' :');
         if (!parts[1]) return;
+        
         const msg = parts[1].trim();
         const rawTags = data.split('PRIVMSG')[0];
         const userMatch = data.match(/:(\w+)!/);
@@ -263,22 +251,82 @@
         const isSub = rawTags.indexOf('subscriber=1') !== -1 || rawTags.indexOf('badges=subscriber') !== -1 || rawTags.indexOf('/founder') !== -1;
         const isAdmin = (user === CHANNEL.toLowerCase());
 
-        if (msg.indexOf('!dibujar ') === 0) {
-          const code = msg.substring(9).trim().split(' ')[0]; 
-          if(code) createDrawing(user, code, isSub, false);
-        } else if (msg.indexOf('!borrar') === 0) {
-          const target = msg.split(' ')[1] ? msg.split(' ')[1].replace('@','') : user;
-          removeDrawing(isAdmin ? target : user);
-        } else if (msg === '!test' && isAdmin) { toggleTest(); }
-        else if (msg === '!fin' && isAdmin) { toggleRain(); }
-        else if (msg.indexOf('!velocidad ') === 0 && isAdmin) {
-             const level = msg.split(' ')[1];
-             if (level === '1') { globalSpeedMultiplier = 0.54; } // Ajustado a nueva base
+        const args = msg.split(' ');
+        const command = args[0].toLowerCase();
+        const argTarget = args[1] ? args[1].replace('@', '').toLowerCase() : null;
+
+        if (command === '!dibujar') {
+          if (args[1]) {
+             createDrawing(user, args[1], isSub, false);
+          }
+        } 
+        else if (command === '!borrar') {
+          // !borrar @target (Admin) -> Borra ULTIMO de target
+          if (isAdmin && argTarget) {
+            removeLastDrawing(argTarget);
+          } 
+          // !borrar (Cualquiera) -> Borra ULTIMO propio
+          else {
+            removeLastDrawing(user);
+          }
+        } 
+        else if (command === '!limpiar') {
+          // !limpiar @target (Admin) -> Borra TODO de target (NUEVO)
+          if (isAdmin && argTarget) {
+             removeAllDrawingsForUser(argTarget);
+          }
+          // !limpiar (Admin) -> Borra TODO GLOBAL
+          else if (isAdmin) {
+             removeAllDrawingsGlobal();
+          } 
+          // !limpiar (Usuario) -> Borra TODO PROPIO
+          else {
+             removeAllDrawingsForUser(user);
+          }
+        }
+        else if (command === '!test' && isAdmin) { toggleTest(); }
+        else if (command === '!fin' && isAdmin) { toggleRain(); }
+        else if (command === '!velocidad' && isAdmin) {
+             const level = args[1];
+             if (level === '1') { globalSpeedMultiplier = 0.54; } 
              else if (level === '2') { globalSpeedMultiplier = 1.0; }
         }
       }
     }
 
+    // === FUNCIONES DE BORRADO ===
+
+    function removeLastDrawing(targetUser) {
+      for (let i = drawings.length - 1; i >= 0; i--) {
+        if (drawings[i].user === targetUser) {
+          drawings[i].el.remove();
+          activeCodes.delete(drawings[i].code);
+          drawings.splice(i, 1);
+          return; 
+        }
+      }
+    }
+
+    function removeAllDrawingsForUser(targetUser) {
+      drawings = drawings.filter(d => {
+        if (d.user === targetUser) {
+           d.el.remove();
+           activeCodes.delete(d.code);
+           return false; 
+        }
+        return true; 
+      });
+    }
+
+    function removeAllDrawingsGlobal() {
+       drawings.forEach(d => d.el.remove());
+       drawings = [];
+       activeCodes.clear();
+       subQueue = [];
+       isShowcaseBusy = false;
+    }
+
+    // === CREACIÓN DE DIBUJOS ===
     function createDrawing(user, fullCode, isSub, isTest, forceX) {
       if (fullCode) fullCode = fullCode.replace(/=+$/, '');
       if (!isTest && activeCodes.has(fullCode)) return;
@@ -325,7 +373,6 @@
             if (!isTest) itemEl.classList.add('waiting');
         }
         if (!isTest && !isSub) {
-            // Usuarios normales: Empiezan saltando
             itemEl.classList.add('jumping');
         }
 
@@ -378,15 +425,11 @@
         current.el.classList.add('showcase');
         setTimeout(() => {
           current.el.classList.remove('showcase');
-          
-          // Re-calcular posición para la salida del showcase
           let min = -200;
           drawings.forEach(d => { if(d.lane === current.lane && d.x < min) min = d.x; });
           current.x = min - 350;
-          
           current.el.classList.add('jumping');
           current.loops = 0; 
-          
           isShowcaseBusy = false;
           processQueue();
         }, 10000); 
@@ -413,13 +456,6 @@
             if (rainMode) { d.rainOriginX = d.x; d.rainSpeed = 0.8 + Math.random() * 2; d.rainPhase = Math.random() * 7; }
             else { d.y = LANES[d.lane]; }
         });
-    }
-
-    function removeDrawing(u) {
-      drawings = drawings.filter(d => {
-        if (d.user === u) { d.el.remove(); activeCodes.delete(d.code); return false; }
-        return true;
-      });
     }
 
     connectTwitch();
