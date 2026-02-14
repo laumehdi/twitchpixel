@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Alpha Gold V19 - Admin Wipe User</title>
+  <style>
+    html, body { 
+      margin: 0; padding: 0; 
+      background: transparent !important; 
+      overflow: hidden; width: 1920px; height: 1080px;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    #container { 
+      position: absolute; width: 100%; height: 100%; 
+      top: 0; left: 0; pointer-events: none; 
+    }
+
+    #status {
+      position: absolute; top: 10px; left: 10px;
+      color: #ffcc00; font-weight: bold; font-size: 24px;
+      text-shadow: 2px 2px 0 #000;
+      z-index: 99999;
+      font-family: monospace;
+      background: rgba(0,0,0,0.7);
+      border-radius: 8px;
+      padding: 10px;
+      display: none; 
+    }
+    
+    .item { 
+      position: absolute; 
+      top: 0; left: 0; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 165px;
+      will-change: transform; 
+    }
+
+    canvas { 
+      image-rendering: pixelated; 
+      width: 165px; height: 165px; 
+      background: transparent; 
+      transition: transform 0.3s; 
+      z-index: 2; 
+    }
+
+    /* Animación normal de salto */
+    @keyframes jumpBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-30px); } 
+    }
+
+    .jumping canvas {
+      animation: jumpBounce 0.8s ease-in-out infinite;
+    }
+
+    /* === SUBS EN CARRIL NORMAL === */
+    .is-sub canvas {
+       filter: brightness(1.15);
+    }
+    
+    .nick { 
+      color: white; 
+      font-weight: 900;
+      font-size: 22px; 
+      width: 280px; 
+      text-align: center;
+      margin-top: 2px;
+      white-space: nowrap;
+      text-shadow: 2px 2px 0 #000; 
+      z-index: 3;
+    }
+
+    .is-sub .nick {
+      color: #FFD700;
+    }
+
+    /* === SHOWCASE CENTRAL === */
+    .showcase {
+      position: fixed !important; 
+      top: 50% !important; 
+      left: 50% !important;
+      z-index: 99999 !important;
+      will-change: transform;
+      animation: superDance 0.8s infinite ease-in-out !important;
+    }
+
+    .showcase::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 280px; height: 280px; 
+      transform: translate(-50%, -60%); 
+      z-index: 1; 
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 224, 0.9) 0%, rgba(255, 215, 0, 0.5) 40%, transparent 70%);
+      animation: auraPulse 1.5s infinite alternate ease-in-out;
+    }
+
+    .showcase canvas {
+      filter: brightness(1.1); 
+    }
+    
+    .showcase .nick {
+       font-size: 33px !important;
+       text-shadow: 3px 3px 0 #000, 0 0 10px rgba(0,0,0,0.5);
+       margin-top: 15px;
+    }
+
+    @keyframes superDance {
+      0%   { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
+      25%  { transform: translate(-50%, -50%) scale(4.4) rotate(-5deg); } 
+      50%  { transform: translate(-50%, -50%) scale(4.1) rotate(0deg) translateY(-15px); } 
+      75%  { transform: translate(-50%, -50%) scale(4.4) rotate(5deg); }
+      100% { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
+    }
+
+    @keyframes auraPulse {
+      0% { transform: translate(-50%, -60%) scale(1); opacity: 0.7; }
+      100% { transform: translate(-50%, -60%) scale(1.15); opacity: 1; }
+    }
+
+    .hidden { display: none !important; }
+    .waiting { opacity: 0; } 
+  </style>
+</head>
+<body>
+  <div id="status">CARGANDO...</div>
+  <div id="container"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let channelParam = urlParams.get('channel');
+    if (!channelParam && window.location.search.length > 1) {
+        channelParam = window.location.search.substring(1).replace('=', '');
+    }
+    const CHANNEL = channelParam || 'laumehdi'; 
+    
+    const colors = ['transparent','#000000','#aa0000','#00aa00','#aa5500','#0000aa','#aa00aa','#00aaaa','#aaaaaa','#555555','#ff5555','#55ff55','#ffff55','#5555ff','#ff55ff','#55ffff','#ffffff'];
+    
+    let drawings = []; 
+    let testMode = false;
+    let rainMode = false; 
+    let subQueue = [];
+    let isShowcaseBusy = false;
+    let ws = null;
+    let activeCodes = new Set(); 
+
+    // === VELOCIDAD ===
+    let globalSpeedMultiplier = 0.54; 
+
+    const LANES = [10, 40, 70, 100]; 
+    const SPEEDS = [2, 3.5, 2.5, 4.5]; 
+    const Z_INDEXES = [5, 20, 10, 30];
+
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      if (!currentTime) currentTime = performance.now();
+      
+      const dt = (currentTime - lastTime) / 16.666;
+      lastTime = currentTime;
+      const now = Date.now(); 
+
+      for (let i = drawings.length - 1; i >= 0; i--) {
+        let d = drawings[i];
+        if (d.el.classList.contains('showcase') || d.el.classList.contains('hidden')) continue;
+        
+        if (d.el.classList.contains('waiting')) {
+             d.el.style.transform = 'translate3d(-500px, -500px, 0)';
+             continue;
+        }
+        
+        if (rainMode) {
+            d.el.style.opacity = 1; 
+            d.y += (d.rainSpeed * dt); 
+            const sway = Math.sin((now / 800) + d.rainPhase) * 20; 
+            d.x = d.rainOriginX + sway;
+            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
+            if (d.y > 1100) { d.y = -180; d.rainOriginX = Math.random() * 1800; }
+            continue; 
+        }
+
+        if (d.dying) {
+            d.vy += 0.5 * dt; 
+            d.y += d.vy * dt; 
+            d.rot += 5 * dt;
+            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0) rotate(${d.rot}deg)`;
+            d.el.style.opacity = (1 - (d.y / 1500)); 
+            if (d.y > 1200) { d.el.remove(); activeCodes.delete(d.code); drawings.splice(i, 1); continue; }
+        } else {
+            d.el.style.opacity = 1;
+            d.x += (d.speed * globalSpeedMultiplier) * dt;
+            
+            if (d.x > 2200) { 
+              d.loops++; 
+              if (d.loops >= 1) {
+                  d.el.classList.remove('jumping');
+              }
+
+              const newLaneIdx = Math.floor(Math.random() * LANES.length);
+              d.lane = newLaneIdx;
+              d.y = LANES[newLaneIdx];
+              d.speed = SPEEDS[newLaneIdx];
+              d.el.style.zIndex = Z_INDEXES[newLaneIdx];
+
+              let minX = -200;
+              drawings.forEach(other => { 
+                  if (other.lane === d.lane && other.x < minX) minX = other.x; 
+              });
+              d.x = minX - 350; 
+            }
+            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    function connectTwitch() {
+      if (ws) { try { ws.close(); } catch(e){} }
+      const statusEl = document.getElementById('status');
+      statusEl.style.display = 'block';
+      statusEl.innerText = "CONECTANDO A: " + CHANNEL.toUpperCase();
+      ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      ws.onopen = () => {
+        statusEl.innerText = "¡CONECTADO! VELOCIDAD: " + (globalSpeedMultiplier >= 0.9 ? "2" : "1");
+        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        ws.send('CAP REQ :twitch.tv/tags');
+        ws.send('PASS oauth:none');
+        ws.send('NICK justinfan' + Math.floor(Math.random()*99999));
+        ws.send('JOIN #' + CHANNEL.toLowerCase());
+      };
+      ws.onclose = () => { statusEl.innerText = "DESCONECTADO"; statusEl.style.display = 'block'; setTimeout(connectTwitch, 3000); };
+      ws.onmessage = (e) => handleMessage(e.data);
+    }
+
+    // === MANEJADOR DE MENSAJES ===
+    function handleMessage(data) {
+      if (data.indexOf('PING') !== -1) { ws.send('PONG :tmi.twitch.tv'); return; }
+      if (data.indexOf('PRIVMSG') !== -1) {
+        const parts = data.split('PRIVMSG #' + CHANNEL.toLowerCase() + ' :');
+        if (!parts[1]) return;
+        
+        const msg = parts[1].trim();
+        const rawTags = data.split('PRIVMSG')[0];
+        const userMatch = data.match(/:(\w+)!/);
+        const user = userMatch ? userMatch[1].toLowerCase() : 'unknown';
+        const isSub = rawTags.indexOf('subscriber=1') !== -1 || rawTags.indexOf('badges=subscriber') !== -1 || rawTags.indexOf('/founder') !== -1;
+        const isAdmin = (user === CHANNEL.toLowerCase());
+
+        const args = msg.split(' ');
+        const command = args[0].toLowerCase();
+        const argTarget = args[1] ? args[1].replace('@', '').toLowerCase() : null;
+
+        if (command === '!dibujar') {
+          if (args[1]) {
+             createDrawing(user, args[1], isSub, false);
+          }
+        } 
+        else if (command === '!borrar') {
+          // !borrar @target (Admin) -> Borra ULTIMO de target
+          if (isAdmin && argTarget) {
+            removeLastDrawing(argTarget);
+          } 
+          // !borrar (Cualquiera) -> Borra ULTIMO propio
+          else {
+            removeLastDrawing(user);
+          }
+        } 
+        else if (command === '!limpiar') {
+          // !limpiar @target (Admin) -> Borra TODO de target (NUEVO)
+          if (isAdmin && argTarget) {
+             removeAllDrawingsForUser(argTarget);
+          }
+          // !limpiar (Admin) -> Borra TODO GLOBAL
+          else if (isAdmin) {
+             removeAllDrawingsGlobal();
+          } 
+          // !limpiar (Usuario) -> Borra TODO PROPIO
+          else {
+             removeAllDrawingsForUser(user);
+          }
+        }
+        else if (command === '!test' && isAdmin) { toggleTest(); }
+        else if (command === '!fin' && isAdmin) { toggleRain(); }
+        else if (command === '!velocidad' && isAdmin) {
+             const level = args[1];
+             if (level === '1') { globalSpeedMultiplier = 0.54; } 
+             else if (level === '2') { globalSpeedMultiplier = 1.0; }
+        }
+      }
+    }
+
+    // === FUNCIONES DE BORRADO ===
+
+    function removeLastDrawing(targetUser) {
+      for (let i = drawings.length - 1; i >= 0; i--) {
+        if (drawings[i].user === targetUser) {
+          drawings[i].el.remove();
+          activeCodes.delete(drawings[i].code);
+          drawings.splice(i, 1);
+          return; 
+        }
+      }
+    }
+
+    function removeAllDrawingsForUser(targetUser) {
+      drawings = drawings.filter(d => {
+        if (d.user === targetUser) {
+           d.el.remove();
+           activeCodes.delete(d.code);
+           return false; 
+        }
+        return true; 
+      });
+    }
+
+    function removeAllDrawingsGlobal() {
+       drawings.forEach(d => d.el.remove());
+       drawings = [];
+       activeCodes.clear();
+       subQueue = [];
+       isShowcaseBusy = false;
+    }
+
+    // === CREACIÓN DE DIBUJOS ===
+    function createDrawing(user, fullCode, isSub, isTest, forceX) {
+      if (fullCode) fullCode = fullCode.replace(/=+$/, '');
+      if (!isTest && activeCodes.has(fullCode)) return;
+      
+      try {
+        let pixelData = [], finalPalette = [];
+        const isV2 = fullCode.indexOf('v2') === 0; 
+        if (isV2) {
+          const cleanCode = fullCode.substring(2);
+          const [headerHex, payload] = cleanCode.split('_');
+          finalPalette.push('transparent'); 
+          for (let i = 0; i < headerHex.length; i += 6) finalPalette.push('#' + headerHex.substring(i, i+6));
+          const binaryString = atob(payload);
+          for (let i = 0; i < binaryString.length; i++) {
+            const byte = binaryString.charCodeAt(i);
+            pixelData.push((byte >> 4) & 0x0F, byte & 0x0F);
+          }
+        } else {
+          const [header, payload] = fullCode.split('_');
+          for (let i = 0; i < payload.length; i += 2) {
+            const colorIdx = parseInt(payload[i], 16), count = parseInt(payload[i+1], 36);
+            for (let j = 0; j < count; j++) pixelData.push(colorIdx);
+          }
+          for(let i=0; i < header.length; i++) {
+            if (header[i] === '1' && header[i+1] === '0') { finalPalette.push(colors[16]); i++; }
+            else { finalPalette.push(colors[parseInt(header[i], 16)]); }
+          }
+        }
+
+        const itemEl = document.createElement('div');
+        itemEl.className = 'item';
+        const canvas = document.createElement('canvas');
+        canvas.width = 16; canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        pixelData.forEach((idx, k) => {
+          if (finalPalette[idx] && finalPalette[idx] !== 'transparent') {
+            ctx.fillStyle = finalPalette[idx];
+            ctx.fillRect(k % 16, Math.floor(k / 16), 1, 1);
+          }
+        });
+
+        if (isSub) {
+            itemEl.classList.add('is-sub');
+            if (!isTest) itemEl.classList.add('waiting');
+        }
+        if (!isTest && !isSub) {
+            itemEl.classList.add('jumping');
+        }
+
+        if (testMode && !isTest) itemEl.classList.add('hidden');
+        itemEl.appendChild(canvas);
+        const nickEl = document.createElement('div');
+        nickEl.className = 'nick'; 
+        nickEl.innerText = (isSub ? '⭐ ' : '') + user;
+        itemEl.appendChild(nickEl);
+        
+        const laneIdx = drawings.length % 4;
+        itemEl.style.zIndex = Z_INDEXES[laneIdx]; 
+        document.getElementById('container').appendChild(itemEl);
+
+        let obj = { 
+            el: itemEl, 
+            user, 
+            code: fullCode, 
+            lane: laneIdx, 
+            speed: SPEEDS[laneIdx], 
+            y: LANES[laneIdx], 
+            x: forceX || -400, 
+            isTest, 
+            dying: false, 
+            rainOriginX: 0, 
+            rainSpeed: 1, 
+            rainPhase: 0,
+            loops: 0
+        };
+
+        if (forceX === undefined) {
+          let min = -200;
+          drawings.forEach(d => { if(d.lane === laneIdx && d.x < min) min = d.x; });
+          obj.x = min - 350;
+        }
+        obj.rainOriginX = obj.x;
+        drawings.push(obj);
+        if (!isTest) {
+          activeCodes.add(fullCode);
+          if (isSub) { subQueue.push(obj); processQueue(); }
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    function processQueue() {
+      if (!isShowcaseBusy && subQueue.length > 0) {
+        isShowcaseBusy = true;
+        const current = subQueue.shift();
+        current.el.classList.remove('waiting', 'hidden');
+        current.el.classList.add('showcase');
+        setTimeout(() => {
+          current.el.classList.remove('showcase');
+          let min = -200;
+          drawings.forEach(d => { if(d.lane === current.lane && d.x < min) min = d.x; });
+          current.x = min - 350;
+          current.el.classList.add('jumping');
+          current.loops = 0; 
+          isShowcaseBusy = false;
+          processQueue();
+        }, 10000); 
+      }
+    }
+
+    function toggleTest() {
+      testMode = !testMode;
+      if (testMode) {
+        drawings.forEach(d => { if(!d.isTest) d.el.classList.add('hidden'); });
+        const code = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
+        for (let i = 0; i < 15; i++) createDrawing('Bot_' + i, code, (i % 2 === 0), true, (Math.random() * 1700));
+      } else {
+        drawings = drawings.filter(d => {
+          if(d.isTest) { d.el.remove(); return false; }
+          d.el.classList.remove('hidden'); return true;
+        });
+      }
+    }
+
+    function toggleRain() {
+        rainMode = !rainMode;
+        drawings.forEach(d => {
+            if (rainMode) { d.rainOriginX = d.x; d.rainSpeed = 0.8 + Math.random() * 2; d.rainPhase = Math.random() * 7; }
+            else { d.y = LANES[d.lane]; }
+        });
+    }
+
+    connectTwitch();
+  </script>
+</body>
+</html>
