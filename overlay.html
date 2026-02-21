@@ -2,73 +2,46 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V22</title>
+  <title>Overlay Alpha Gold V23 - Random Events</title>
   <style>
-    /* === Solarized Dark Palette ===
-       base03: #002b36  base02: #073642  base01: #586e75  base00: #657b83
-       base0:  #839496  base1:  #93a1a1  base2:  #eee8d5  base3:  #fdf6e3
-       yellow: #b58900  orange: #cb4b16  red:    #dc322f  magenta:#d33682
-       violet: #6c71c4  blue:   #268bd2  cyan:   #2aa198  green:  #859900
-    */
+    /* === Solarized Palette Reference ===
+       base03:#002b36 base02:#073642 base01:#586e75 base00:#657b83
+       base0:#839496  base1:#93a1a1  base2:#eee8d5  base3:#fdf6e3
+       yellow:#b58900 orange:#cb4b16 red:#dc322f magenta:#d33682
+       violet:#6c71c4 blue:#268bd2   cyan:#2aa198   green:#859900 */
 
     html, body { 
-      margin: 0; padding: 0; 
-      background: transparent !important; 
+      margin: 0; padding: 0; background: transparent !important; 
       overflow: hidden; width: 1920px; height: 1080px;
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
-    
-    #container { 
-      position: absolute; width: 100%; height: 100%; 
-      top: 0; left: 0; pointer-events: none; 
-    }
+    #container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
 
     #status {
       position: absolute; top: 10px; left: 10px;
       color: #ffcc00; font-weight: bold; font-size: 24px;
-      text-shadow: 2px 2px 0 #000;
-      z-index: 99999;
-      font-family: monospace;
-      background: rgba(0,0,0,0.7);
-      border-radius: 8px;
-      padding: 10px;
-      display: none; 
+      text-shadow: 2px 2px 0 #000; z-index: 99999; font-family: monospace;
+      background: rgba(0,0,0,0.7); border-radius: 8px; padding: 10px; display: none; 
     }
     
     .item { 
-      position: absolute; 
-      top: 0; left: 0; 
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 165px;
-      will-change: transform; 
+      position: absolute; top: 0; left: 0; display: flex;
+      flex-direction: column; align-items: center; width: 165px; will-change: transform; 
     }
-
     canvas.pixel-art { 
-      image-rendering: pixelated; 
-      width: 165px; height: 165px; 
-      background: transparent; 
-      z-index: 2; 
+      image-rendering: pixelated; width: 165px; height: 165px; 
+      background: transparent; z-index: 2; 
     }
 
-    @keyframes jumpBounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-30px); } 
-    }
-
-    .jumping canvas {
-      animation: jumpBounce 0.8s ease-in-out infinite;
-    }
-
+    @keyframes jumpBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-30px)} }
+    .jumping canvas { animation: jumpBounce 0.8s ease-in-out infinite; }
     .is-sub canvas { filter: brightness(1.15); }
     
     .nick { 
-      color: white; font-weight: 900; font-size: 22px; 
-      width: 280px; text-align: center; margin-top: 2px;
-      white-space: nowrap; text-shadow: 2px 2px 0 #000; z-index: 3;
+      color: white; font-weight: 900; font-size: 22px; width: 280px; 
+      text-align: center; margin-top: 2px; white-space: nowrap; 
+      text-shadow: 2px 2px 0 #000; z-index: 3;
     }
-
     .is-sub .nick { color: #FFD700; }
 
     /* === SHOWCASE === */
@@ -85,177 +58,156 @@
       animation: auraPulse 1.5s infinite alternate ease-in-out;
     }
     .showcase canvas { filter: brightness(1.1); }
-    .showcase .nick {
-       font-size: 33px !important;
-       text-shadow: 3px 3px 0 #000, 0 0 10px rgba(0,0,0,0.5);
-       margin-top: 15px;
-    }
+    .showcase .nick { font-size: 33px !important; text-shadow: 3px 3px 0 #000, 0 0 10px rgba(0,0,0,0.5); margin-top: 15px; }
     @keyframes superDance {
-      0%   { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
-      25%  { transform: translate(-50%, -50%) scale(4.4) rotate(-5deg); } 
-      50%  { transform: translate(-50%, -50%) scale(4.1) rotate(0deg) translateY(-15px); } 
-      75%  { transform: translate(-50%, -50%) scale(4.4) rotate(5deg); }
-      100% { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
+      0%{transform:translate(-50%,-50%) scale(4.1) rotate(0deg)}
+      25%{transform:translate(-50%,-50%) scale(4.4) rotate(-5deg)}
+      50%{transform:translate(-50%,-50%) scale(4.1) rotate(0deg) translateY(-15px)}
+      75%{transform:translate(-50%,-50%) scale(4.4) rotate(5deg)}
+      100%{transform:translate(-50%,-50%) scale(4.1) rotate(0deg)}
     }
     @keyframes auraPulse {
-      0% { transform: translate(-50%, -60%) scale(1); opacity: 0.7; }
-      100% { transform: translate(-50%, -60%) scale(1.15); opacity: 1; }
+      0%{transform:translate(-50%,-60%) scale(1);opacity:0.7}
+      100%{transform:translate(-50%,-60%) scale(1.15);opacity:1}
     }
 
     .hidden { display: none !important; }
     .waiting { opacity: 0; }
+    .spiral-to-lane { position: absolute !important; z-index: 99998 !important; will-change: transform; pointer-events: none; }
+    .spiral-to-lane .nick { transition: font-size 1.2s ease-in; font-size: 22px !important; }
 
-    .spiral-to-lane {
-      position: absolute !important; z-index: 99998 !important;
-      will-change: transform; pointer-events: none;
+    /* === FIGHT HUD === */
+    #fight-hud {
+      display: none; position: fixed; top: 0; left: 0; width: 1920px; height: 1080px;
+      z-index: 90000; pointer-events: none;
     }
-    .spiral-to-lane .nick {
-      transition: font-size 1.2s ease-in;
-      font-size: 22px !important;
+    .hp-bar-container {
+      position: absolute; top: 40px; width: 700px; height: 40px;
+      border-radius: 8px; overflow: hidden;
+      border: 3px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+    .hp-bar-container.left  { left: 50px; }
+    .hp-bar-container.right { right: 50px; }
+    .hp-bar-bg { width: 100%; height: 100%; background: #333; }
+    .hp-bar-fill { height: 100%; transition: width 0.3s ease-out; }
+    .hp-bar-fill.left  { background: linear-gradient(90deg, #dc322f, #ff6b6b); float: left; }
+    .hp-bar-fill.right { background: linear-gradient(90deg, #6bc5ff, #268bd2); float: right; }
+    .hp-label {
+      position: absolute; top: 44px; font-size: 22px; font-weight: 900;
+      color: white; text-shadow: 2px 2px 0 #000;
+    }
+    .hp-label.left  { left: 50px; }
+    .hp-label.right { right: 50px; }
+
+    #fight-text {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      font-size: 120px; font-weight: 900; color: #dc322f;
+      text-shadow: 4px 4px 0 #000, 0 0 40px rgba(220,50,47,0.6);
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      letter-spacing: 10px; display: none;
+      animation: fightPulse 0.3s ease-in-out 3;
+    }
+    @keyframes fightPulse {
+      0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.15)}
     }
 
-    /* ============================================
-       TEST PANEL - Solarized Light (default)
-       Dark mode auto-detected via prefers-color-scheme
-       ============================================ */
+    #fight-winner-text {
+      position: absolute; top: 35%; left: 50%; transform: translate(-50%,-50%);
+      font-size: 70px; font-weight: 900; color: #b58900;
+      text-shadow: 3px 3px 0 #000, 0 0 30px rgba(181,137,0,0.5);
+      font-family: 'Impact', 'Arial Black', sans-serif;
+      display: none;
+    }
 
-    /* --- Solarized CSS Variables --- */
+    /* === SOLARIZED TEST PANEL === */
     :root {
-      --sol-bg:       #fdf6e3;
-      --sol-bg-alt:   #eee8d5;
-      --sol-border:   #93a1a1;
-      --sol-text:     #657b83;
-      --sol-text-dim: #93a1a1;
-      --sol-text-emph:#586e75;
-      --sol-shadow:   rgba(0,0,0,0.12);
-      --sol-scrollbar: #93a1a1;
-      --sol-line-border: #eee8d5;
-      /* accent colors are the same in both themes */
+      --sol-bg:#fdf6e3; --sol-bg-alt:#eee8d5; --sol-border:#93a1a1;
+      --sol-text:#657b83; --sol-text-dim:#93a1a1; --sol-text-emph:#586e75;
+      --sol-shadow:rgba(0,0,0,0.12); --sol-scrollbar:#93a1a1; --sol-line-border:#eee8d5;
     }
-
     @media (prefers-color-scheme: dark) {
       :root {
-        --sol-bg:       #002b36;
-        --sol-bg-alt:   #073642;
-        --sol-border:   #073642;
-        --sol-text:     #839496;
-        --sol-text-dim: #586e75;
-        --sol-text-emph:#93a1a1;
-        --sol-shadow:   rgba(0,0,0,0.5);
-        --sol-scrollbar: #586e75;
-        --sol-line-border: #073642;
+        --sol-bg:#002b36; --sol-bg-alt:#073642; --sol-border:#073642;
+        --sol-text:#839496; --sol-text-dim:#586e75; --sol-text-emph:#93a1a1;
+        --sol-shadow:rgba(0,0,0,0.5); --sol-scrollbar:#586e75; --sol-line-border:#073642;
       }
     }
-
     #test-bar {
-      display: none;
-      position: fixed;
-      bottom: 10px; left: 10px;
-      z-index: 100000;
-      pointer-events: auto;
-      font-family: 'Segoe UI', sans-serif;
-      flex-direction: row;
-      align-items: flex-end;
-      gap: 10px;
+      display: none; position: fixed; bottom: 10px; left: 10px; z-index: 100000;
+      pointer-events: auto; font-family: 'Segoe UI', sans-serif;
+      flex-direction: row; align-items: flex-end; gap: 10px;
     }
-
     #test-buttons {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      max-width: 340px;
-      padding: 10px;
-      background: var(--sol-bg);
-      border-radius: 10px;
-      border: 1px solid var(--sol-border);
+      display: flex; gap: 6px; flex-wrap: wrap; max-width: 380px; padding: 10px;
+      background: var(--sol-bg); border-radius: 10px; border: 1px solid var(--sol-border);
       box-shadow: 0 4px 20px var(--sol-shadow);
     }
-
     #test-buttons button {
-      padding: 9px 14px;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.1s, filter 0.1s;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      font-family: 'Segoe UI', sans-serif;
+      padding: 9px 14px; border: none; border-radius: 6px; font-size: 13px;
+      font-weight: 700; cursor: pointer; transition: transform 0.1s, filter 0.1s;
+      text-transform: uppercase; letter-spacing: 0.3px; font-family: 'Segoe UI', sans-serif;
     }
     #test-buttons button:hover { transform: scale(1.05); filter: brightness(1.15); }
     #test-buttons button:active { transform: scale(0.97); }
 
-    .btn-user    { background: #859900; color: #fdf6e3; }
-    .btn-sub     { background: #b58900; color: #fdf6e3; }
-    .btn-speed   { background: #268bd2; color: #fdf6e3; }
-    .btn-rain    { background: #6c71c4; color: #fdf6e3; }
-    .btn-boom    { background: #dc322f; color: #fdf6e3; font-size: 14px !important; }
-    .btn-exit    { background: #586e75; color: #fdf6e3; }
-    .btn-clear   { background: #cb4b16; color: #fdf6e3; }
-
+    .btn-user  { background:#859900; color:#fdf6e3; }
+    .btn-sub   { background:#b58900; color:#fdf6e3; }
+    .btn-speed { background:#268bd2; color:#fdf6e3; }
+    .btn-rain  { background:#6c71c4; color:#fdf6e3; }
+    .btn-boom  { background:#dc322f; color:#fdf6e3; }
+    .btn-pogo  { background:#d33682; color:#fdf6e3; }
+    .btn-fight { background:#cb4b16; color:#fdf6e3; }
+    .btn-exit  { background:#586e75; color:#fdf6e3; }
+    .btn-clear { background:#073642; color:#93a1a1; }
     .btn-speed.active { box-shadow: 0 0 0 2px #2aa198; }
 
-    /* === CONSOLA Solarized === */
     #test-console {
-      width: 480px; height: 260px;
-      background: var(--sol-bg);
-      border: 1px solid var(--sol-border);
-      border-radius: 10px;
+      width: 500px; height: 260px; background: var(--sol-bg);
+      border: 1px solid var(--sol-border); border-radius: 10px;
       box-shadow: 0 4px 20px var(--sol-shadow);
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      font-size: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+      font-size: 12px; overflow: hidden; display: flex; flex-direction: column;
     }
-
     #test-console-header {
-      padding: 6px 12px;
-      background: var(--sol-bg-alt);
-      color: var(--sol-text-emph);
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border-bottom: 1px solid var(--sol-border);
-      display: flex;
-      justify-content: space-between;
+      padding: 6px 12px; background: var(--sol-bg-alt); color: var(--sol-text-emph);
+      font-size: 11px; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 1px; border-bottom: 1px solid var(--sol-border);
+      display: flex; justify-content: space-between;
     }
-
-    #test-console-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 12px;
-      display: flex;
-      flex-direction: column;
-    }
-
+    #test-console-body { flex:1; overflow-y:auto; padding:8px 12px; display:flex; flex-direction:column; }
     #test-console-body::-webkit-scrollbar { width: 6px; }
     #test-console-body::-webkit-scrollbar-track { background: var(--sol-bg); }
     #test-console-body::-webkit-scrollbar-thumb { background: var(--sol-scrollbar); border-radius: 3px; }
 
-    .log-line {
-      padding: 2px 0;
-      line-height: 1.5;
-      color: var(--sol-text);
-      border-bottom: 1px solid var(--sol-line-border);
-    }
-    .log-line .time   { color: var(--sol-text-dim); }
-    .log-line .tag-lane  { color: #2aa198; }
-    .log-line .tag-user  { color: #859900; }
-    .log-line .tag-sub   { color: #b58900; }
-    .log-line .tag-boom  { color: #dc322f; }
-    .log-line .tag-speed { color: #268bd2; }
-    .log-line .tag-rain  { color: #6c71c4; }
-    .log-line .tag-info  { color: var(--sol-text-dim); }
+    .log-line { padding:2px 0; line-height:1.5; color:var(--sol-text); border-bottom:1px solid var(--sol-line-border); }
+    .log-line .time { color:var(--sol-text-dim); }
+    .log-line .tag-lane  { color:#2aa198; }
+    .log-line .tag-user  { color:#859900; }
+    .log-line .tag-sub   { color:#b58900; }
+    .log-line .tag-boom  { color:#dc322f; }
+    .log-line .tag-pogo  { color:#d33682; }
+    .log-line .tag-fight { color:#cb4b16; }
+    .log-line .tag-speed { color:#268bd2; }
+    .log-line .tag-rain  { color:#6c71c4; }
+    .log-line .tag-event { color:#2aa198; }
+    .log-line .tag-info  { color:var(--sol-text-dim); }
   </style>
 </head>
 <body>
   <div id="status">CARGANDO...</div>
   <div id="container"></div>
 
-  <!-- TEST BAR: botones a la izquierda, consola a la derecha -->
+  <!-- FIGHT HUD -->
+  <div id="fight-hud">
+    <div class="hp-bar-container left"><div class="hp-bar-bg"><div class="hp-bar-fill left" id="hp-left" style="width:100%"></div></div></div>
+    <div class="hp-label left" id="hp-label-left">EQUIPO ROJO</div>
+    <div class="hp-bar-container right"><div class="hp-bar-bg"><div class="hp-bar-fill right" id="hp-right" style="width:100%"></div></div></div>
+    <div class="hp-label right" id="hp-label-right">EQUIPO AZUL</div>
+    <div id="fight-text">FIGHT!</div>
+    <div id="fight-winner-text"></div>
+  </div>
+
+  <!-- TEST BAR -->
   <div id="test-bar">
     <div id="test-buttons">
       <button class="btn-user" onclick="testAddUser()">➕ Usuario</button>
@@ -263,8 +215,10 @@
       <button class="btn-speed" id="btn-spd1" onclick="testSpeed(1)">🐢 Vel 1</button>
       <button class="btn-speed" id="btn-spd2" onclick="testSpeed(2)">🐇 Vel 2</button>
       <button class="btn-rain" onclick="toggleRain()">🌧️ Lluvia</button>
-      <button class="btn-boom" onclick="triggerBoom()">💥 BOOM</button>
-      <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info', 'Todos los dibujos eliminados')">🗑️ Limpiar</button>
+      <button class="btn-boom" onclick="triggerBoom()">💥 Boom</button>
+      <button class="btn-pogo" onclick="triggerPogo()">🦘 Pogo</button>
+      <button class="btn-fight" onclick="triggerFight()">⚔️ Fight</button>
+      <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info','Limpiado')">🗑️</button>
       <button class="btn-exit" onclick="toggleTest()">❌ Salir</button>
     </div>
     <div id="test-console">
@@ -279,63 +233,46 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     let channelParam = urlParams.get('channel');
-    if (!channelParam && window.location.search.length > 1) {
-        channelParam = window.location.search.substring(1).replace('=', '');
-    }
+    if (!channelParam && window.location.search.length > 1) channelParam = window.location.search.substring(1).replace('=', '');
     const CHANNEL = channelParam || 'laumehdi'; 
     
     const colors = ['transparent','#000000','#aa0000','#00aa00','#aa5500','#0000aa','#aa00aa','#00aaaa','#aaaaaa','#555555','#ff5555','#55ff55','#ffff55','#5555ff','#ff55ff','#55ffff','#ffffff'];
-    
     const TEST_CODE = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
+    const RANDOM_NAMES = ['PixelMaster','xDarkSoul','CoolCat99','TwitchFan','GamerGirl','NightOwl42','StarPlayer','MoonWalk','FireStorm','IceQueen','ShadowNinja','ThunderBolt','CosmicDust','NeonLight','RetroGamer','DigitalArt','PixelPunk','ChipTune','BitCrusher','WaveRider','CyberWolf','TurboFox','LaserBeam','RocketFuel','QuantumLeap','ZeroGravity','SuperNova','MegaByte','HyperLink','GlitchHop'];
 
-    const RANDOM_NAMES = [
-      'PixelMaster','xDarkSoul','CoolCat99','TwitchFan','GamerGirl','NightOwl42',
-      'StarPlayer','MoonWalk','FireStorm','IceQueen','ShadowNinja','ThunderBolt',
-      'CosmicDust','NeonLight','RetroGamer','DigitalArt','PixelPunk','ChipTune',
-      'BitCrusher','WaveRider','CyberWolf','TurboFox','LaserBeam','RocketFuel',
-      'QuantumLeap','ZeroGravity','SuperNova','MegaByte','HyperLink','GlitchHop'
-    ];
-
-    let drawings = []; 
-    let testMode = false;
-    let rainMode = false; 
-    let boomMode = false;
-    let subQueue = [];
-    let isShowcaseBusy = false;
-    let ws = null;
-    let activeCodes = new Set(); 
-    let testUserCounter = 0;
-    let boomTimer = null;
-
-    let globalSpeedMultiplier = 0.54; 
-
-    const LANES = [10, 40, 70, 100]; 
-    const SPEEDS = [2, 3.5, 2.5, 4.5]; 
-    const Z_INDEXES = [5, 20, 10, 30];
-
+    let drawings = [], testMode = false, rainMode = false;
+    let subQueue = [], isShowcaseBusy = false, ws = null, activeCodes = new Set();
+    let testUserCounter = 0, globalSpeedMultiplier = 0.54;
     let lastTime = performance.now();
 
+    // === EVENT SYSTEM STATE ===
+    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | null
+    let eventTimer = null;
+    let randomEventScheduler = null;
+    let fightState = null;
+
+    const LANES = [10, 40, 70, 100], SPEEDS = [2, 3.5, 2.5, 4.5], Z_INDEXES = [5, 20, 10, 30];
+
     // === CONSOLA ===
-    function logConsole(tag, message) {
+    function logConsole(tag, msg) {
       if (!testMode) return;
       const body = document.getElementById('test-console-body');
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('es', { hour12: false });
+      const t = new Date().toLocaleTimeString('es', {hour12:false});
       const line = document.createElement('div');
       line.className = 'log-line';
-      line.innerHTML = `<span class="time">${timeStr}</span> <span class="tag-${tag}">[${tag.toUpperCase()}]</span> ${message}`;
+      line.innerHTML = `<span class="time">${t}</span> <span class="tag-${tag}">[${tag.toUpperCase()}]</span> ${msg}`;
       body.appendChild(line);
       body.scrollTop = body.scrollHeight;
       while (body.children.length > 200) body.removeChild(body.firstChild);
       updateConsoleStats();
     }
-
     function updateConsoleStats() {
       const el = document.getElementById('console-stats');
       if (!el) return;
       const lc = [0,0,0,0];
-      drawings.forEach(d => { if (!d.el.classList.contains('showcase') && !d.el.classList.contains('hidden')) lc[d.lane]++; });
-      el.textContent = `Total: ${drawings.length} | C1:${lc[0]} C2:${lc[1]} C3:${lc[2]} C4:${lc[3]} | Vel: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`;
+      drawings.forEach(d => { if (!d.el.classList.contains('showcase')&&!d.el.classList.contains('hidden')) lc[d.lane]++; });
+      const evtStr = activeEvent ? ` | 🎪 ${activeEvent.toUpperCase()}` : '';
+      el.textContent = `Total:${drawings.length} | C1:${lc[0]} C2:${lc[1]} C3:${lc[2]} C4:${lc[3]} | Vel:${globalSpeedMultiplier>=0.9?'2':'1'}${evtStr}`;
     }
 
     function getMinXInLane(laneIdx, excludeObj) {
@@ -348,7 +285,6 @@
       return minX === Infinity ? -200 : minX;
     }
 
-    // Helper: dar velocidades de boom a un dibujo
     function assignBoomPhysics(d) {
       d.el.classList.remove('jumping');
       const angle = Math.random() * Math.PI * 2;
@@ -359,434 +295,590 @@
       d.boomRotSpeed = (Math.random() - 0.5) * 12;
     }
 
-    // === LOOP PRINCIPAL ===
+    // Restore all drawings to normal lane walking after any event
+    function restoreToLanes() {
+      drawings.forEach((d, idx) => {
+        if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting')) return;
+        d.el.style.opacity = 1;
+        d.el.classList.remove('jumping');
+        const laneIdx = idx % LANES.length;
+        d.lane = laneIdx; d.y = LANES[laneIdx]; d.speed = SPEEDS[laneIdx];
+        d.el.style.zIndex = Z_INDEXES[laneIdx];
+        d.x = getMinXInLane(laneIdx, d) - 350;
+        d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
+        d.fightSide = undefined;
+        d.fightDead = false;
+      });
+    }
+
+    function endEvent() {
+      if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
+      const evName = activeEvent;
+      activeEvent = null;
+      fightState = null;
+      document.getElementById('fight-hud').style.display = 'none';
+      restoreToLanes();
+      logConsole('event', `🎪 Evento <b>${evName}</b> terminado — volviendo a carriles`);
+      updateConsoleStats();
+    }
+
+    function isEventActive() { return activeEvent !== null; }
+
+    // ==============================================================
+    //  MAIN ANIMATION LOOP
+    // ==============================================================
     function animate(currentTime) {
       if (!currentTime) currentTime = performance.now();
       const dt = Math.min((currentTime - lastTime) / 16.666, 3);
       lastTime = currentTime;
-      const now = Date.now(); 
+      const now = Date.now();
+
+      // Fight logic tick
+      if (activeEvent === 'fight' && fightState && fightState.phase === 'fighting') {
+        fightTick(dt);
+      }
 
       for (let i = drawings.length - 1; i >= 0; i--) {
         let d = drawings[i];
-        if (d.el.classList.contains('showcase') || d.el.classList.contains('hidden')) continue;
-        if (d.el.classList.contains('spiral-to-lane')) continue;
-        
-        if (d.el.classList.contains('waiting')) {
-             d.el.style.transform = 'translate3d(-500px, -500px, 0)';
-             continue;
-        }
+        if (d.el.classList.contains('showcase') || d.el.classList.contains('hidden') || d.el.classList.contains('spiral-to-lane')) continue;
+        if (d.el.classList.contains('waiting')) { d.el.style.transform = 'translate3d(-500px,-500px,0)'; continue; }
 
         // === BOOM ===
-        if (boomMode) {
-            d.el.style.opacity = 1;
-            d.x += d.boomVx * dt;
-            d.y += d.boomVy * dt;
-            d.boomRot += d.boomRotSpeed * dt;
-
-            if (d.x < -80)   { d.x = -80;  d.boomVx = Math.abs(d.boomVx); }
-            if (d.x > 1840)  { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
-            if (d.y < -80)   { d.y = -80;  d.boomVy = Math.abs(d.boomVy); }
-            if (d.y > 980)   { d.y = 980;  d.boomVy = -Math.abs(d.boomVy); }
-
-            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0) rotate(${d.boomRot}deg)`;
-            continue;
+        if (activeEvent === 'boom') {
+          d.el.style.opacity = 1;
+          d.x += d.boomVx * dt; d.y += d.boomVy * dt; d.boomRot += d.boomRotSpeed * dt;
+          if (d.x < -80) { d.x=-80; d.boomVx=Math.abs(d.boomVx); }
+          if (d.x > 1840) { d.x=1840; d.boomVx=-Math.abs(d.boomVx); }
+          if (d.y < -80) { d.y=-80; d.boomVy=Math.abs(d.boomVy); }
+          if (d.y > 980) { d.y=980; d.boomVy=-Math.abs(d.boomVy); }
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0) rotate(${d.boomRot}deg)`;
+          continue;
         }
-        
+
+        // === POGO ===
+        if (activeEvent === 'pogo') {
+          d.el.style.opacity = 1;
+          d.boomVy += 0.6 * dt; // gravity
+          d.y += d.boomVy * dt;
+          d.x += d.boomVx * dt;
+          // bounce off floor
+          if (d.y > 820) { d.y = 820; d.boomVy = -(4 + Math.random() * 6); }
+          // bounce off walls
+          if (d.x < -80) { d.x = -80; d.boomVx = Math.abs(d.boomVx); }
+          if (d.x > 1840) { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
+          d.boomRot += d.boomRotSpeed * dt;
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0) rotate(${d.boomRot}deg)`;
+          continue;
+        }
+
+        // === FIGHT ===
+        if (activeEvent === 'fight') {
+          if (d.fightDead) { d.el.style.opacity = 0; continue; }
+          const fs = fightState;
+          if (fs) {
+            if (fs.phase === 'lineup') {
+              // Float to sides
+              const targetX = d.fightSide === 'left' ? d.fightSlotX : d.fightSlotX;
+              const targetY = d.fightSlotY;
+              d.x += (targetX - d.x) * 0.05 * dt;
+              d.y += (targetY - d.y) * 0.05 * dt;
+              // Idle bobbing
+              const bob = Math.sin(now / 600 + d.fightPhase) * 4;
+              d.el.style.transform = `translate3d(${d.x}px,${d.y + bob}px,0)`;
+            } else if (fs.phase === 'fighting') {
+              // Charge toward center and chaotic movement
+              const centerX = 880;
+              d.x += (centerX - d.x) * 0.02 * dt + (Math.random() - 0.5) * 8 * dt;
+              d.y += (Math.random() - 0.5) * 6 * dt;
+              // Keep in bounds
+              if (d.y < 100) d.y = 100; if (d.y > 900) d.y = 900;
+              const shake = Math.sin(now / 50 + d.fightPhase) * 3;
+              d.el.style.transform = `translate3d(${d.x}px,${d.y + shake}px,0)`;
+            } else if (fs.phase === 'victory') {
+              // Winners dance in center
+              if (d.fightDead) { d.el.style.opacity = 0; continue; }
+              const bob = Math.sin(now / 300 + d.fightPhase) * 15;
+              const sway = Math.sin(now / 500 + d.fightPhase) * 10;
+              d.el.style.transform = `translate3d(${d.x + sway}px,${d.y + bob}px,0) scale(1.3)`;
+            }
+          }
+          continue;
+        }
+
         // === RAIN ===
         if (rainMode) {
-            d.el.style.opacity = 1; 
-            d.y += (d.rainSpeed * dt); 
-            const sway = Math.sin((now / 800) + d.rainPhase) * 20; 
-            d.x = d.rainOriginX + sway;
-            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
-            if (d.y > 1100) { d.y = -180; d.rainOriginX = Math.random() * 1800; }
-            continue; 
+          d.el.style.opacity = 1; d.y += d.rainSpeed * dt;
+          d.x = d.rainOriginX + Math.sin((now/800)+d.rainPhase)*20;
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0)`;
+          if (d.y > 1100) { d.y = -180; d.rainOriginX = Math.random()*1800; }
+          continue;
         }
 
         // === DYING ===
         if (d.dying) {
-            d.vy += 0.5 * dt; 
-            d.y += d.vy * dt; 
-            d.rot += 5 * dt;
-            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0) rotate(${d.rot}deg)`;
-            d.el.style.opacity = (1 - (d.y / 1500)); 
-            if (d.y > 1200) { d.el.remove(); activeCodes.delete(d.code); drawings.splice(i, 1); continue; }
-        } else {
-            // === NORMAL WALK ===
-            d.el.style.opacity = 1;
-            d.x += (d.speed * globalSpeedMultiplier) * dt;
-            
-            if (d.x > 2200) { 
-              d.loops++; 
-              if (d.loops >= 1) d.el.classList.remove('jumping');
-
-              const oldLane = d.lane;
-              const newLaneIdx = Math.floor(Math.random() * LANES.length);
-              d.lane = newLaneIdx;
-              d.y = LANES[newLaneIdx];
-              d.speed = SPEEDS[newLaneIdx];
-              d.el.style.zIndex = Z_INDEXES[newLaneIdx];
-              d.x = getMinXInLane(newLaneIdx, d) - 350;
-
-              logConsole('lane', `<b>${d.user}</b> loop #${d.loops} → carril ${newLaneIdx + 1} ${oldLane !== newLaneIdx ? '(cambió)' : '(mismo)'}`);
-            }
-            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
+          d.vy += 0.5*dt; d.y += d.vy*dt; d.rot += 5*dt;
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0) rotate(${d.rot}deg)`;
+          d.el.style.opacity = (1 - d.y/1500);
+          if (d.y > 1200) { d.el.remove(); activeCodes.delete(d.code); drawings.splice(i,1); }
+          continue;
         }
+
+        // === NORMAL WALK ===
+        d.el.style.opacity = 1;
+        d.x += d.speed * globalSpeedMultiplier * dt;
+        if (d.x > 2200) {
+          d.loops++;
+          if (d.loops >= 1) d.el.classList.remove('jumping');
+          const oldLane = d.lane;
+          const nl = Math.floor(Math.random()*LANES.length);
+          d.lane=nl; d.y=LANES[nl]; d.speed=SPEEDS[nl]; d.el.style.zIndex=Z_INDEXES[nl];
+          d.x = getMinXInLane(nl, d) - 350;
+          logConsole('lane', `<b>${d.user}</b> loop #${d.loops} → carril ${nl+1} ${oldLane!==nl?'(cambió)':'(mismo)'}`);
+        }
+        d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0)`;
       }
       requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
 
-    // === TWITCH ===
+    // ==============================================================
+    //  TWITCH
+    // ==============================================================
     function connectTwitch() {
-      if (ws) { try { ws.close(); } catch(e){} }
-      const statusEl = document.getElementById('status');
-      statusEl.style.display = 'block';
-      statusEl.innerText = "CONECTANDO A: " + CHANNEL.toUpperCase();
+      if (ws) { try{ws.close();}catch(e){} }
+      const s = document.getElementById('status');
+      s.style.display='block'; s.innerText="CONECTANDO A: "+CHANNEL.toUpperCase();
       ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
       ws.onopen = () => {
-        statusEl.innerText = "¡CONECTADO! VELOCIDAD: " + (globalSpeedMultiplier >= 0.9 ? "2" : "1");
-        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-        ws.send('CAP REQ :twitch.tv/tags');
-        ws.send('PASS oauth:none');
-        ws.send('NICK justinfan' + Math.floor(Math.random()*99999));
-        ws.send('JOIN #' + CHANNEL.toLowerCase());
+        s.innerText="¡CONECTADO!"; setTimeout(()=>{s.style.display='none';},3000);
+        ws.send('CAP REQ :twitch.tv/tags'); ws.send('PASS oauth:none');
+        ws.send('NICK justinfan'+Math.floor(Math.random()*99999));
+        ws.send('JOIN #'+CHANNEL.toLowerCase());
       };
-      ws.onclose = () => { statusEl.innerText = "DESCONECTADO"; statusEl.style.display = 'block'; setTimeout(connectTwitch, 3000); };
-      ws.onerror = (e) => { console.error('WebSocket error:', e); };
+      ws.onclose = () => { s.innerText="DESCONECTADO"; s.style.display='block'; setTimeout(connectTwitch,3000); };
+      ws.onerror = (e) => console.error('WS error',e);
       ws.onmessage = (e) => handleMessage(e.data);
     }
 
     function handleMessage(data) {
       if (data.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); return; }
-      if (data.indexOf('PRIVMSG') !== -1) {
-        const parts = data.split('PRIVMSG #' + CHANNEL.toLowerCase() + ' :');
-        if (!parts[1]) return;
-        
-        const msg = parts[1].trim();
-        const rawTags = data.split('PRIVMSG')[0];
-        const userMatch = data.match(/:(\w+)!/);
-        const user = userMatch ? userMatch[1].toLowerCase() : 'unknown';
-        const isSub = /subscriber=1/.test(rawTags) || /badges=[^;]*(?:subscriber|founder)/.test(rawTags);
-        const isAdmin = (user === CHANNEL.toLowerCase());
+      if (data.indexOf('PRIVMSG') === -1) return;
+      const parts = data.split('PRIVMSG #'+CHANNEL.toLowerCase()+' :');
+      if (!parts[1]) return;
+      const msg = parts[1].trim();
+      const rawTags = data.split('PRIVMSG')[0];
+      const userMatch = data.match(/:(\w+)!/);
+      const user = userMatch ? userMatch[1].toLowerCase() : 'unknown';
+      const isSub = /subscriber=1/.test(rawTags) || /badges=[^;]*(?:subscriber|founder)/.test(rawTags);
+      const isAdmin = (user === CHANNEL.toLowerCase());
+      const args = msg.split(' ');
+      const cmd = args[0].toLowerCase();
+      const argT = args[1] ? args[1].replace('@','').toLowerCase() : null;
 
-        const args = msg.split(' ');
-        const command = args[0].toLowerCase();
-        const argTarget = args[1] ? args[1].replace('@', '').toLowerCase() : null;
-
-        if (command === '!dibujar') {
-          if (args[1]) createDrawing(user, args[1], isSub, false);
-        } 
-        else if (command === '!borrar') {
-          if (isAdmin && argTarget) removeLastDrawing(argTarget);
-          else removeLastDrawing(user);
-        } 
-        else if (command === '!limpiar') {
-          if (isAdmin && argTarget) removeAllDrawingsForUser(argTarget);
-          else if (isAdmin) removeAllDrawingsGlobal();
-          else removeAllDrawingsForUser(user);
-        }
-        else if (command === '!test' && isAdmin) { toggleTest(); }
-        else if (command === '!fin' && isAdmin) { toggleRain(); }
-        else if (command === '!boom' && isAdmin) { triggerBoom(); }
-        else if (command === '!velocidad' && isAdmin) {
-             const level = args[1];
-             if (level === '1') { globalSpeedMultiplier = 0.54; logConsole('speed', 'Velocidad → 1 (lenta)'); } 
-             else if (level === '2') { globalSpeedMultiplier = 1.0; logConsole('speed', 'Velocidad → 2 (rápida)'); }
-        }
+      if (cmd === '!dibujar' && args[1]) createDrawing(user, args[1], isSub, false);
+      else if (cmd === '!borrar') { if(isAdmin&&argT) removeLastDrawing(argT); else removeLastDrawing(user); }
+      else if (cmd === '!limpiar') { if(isAdmin&&argT) removeAllDrawingsForUser(argT); else if(isAdmin) removeAllDrawingsGlobal(); else removeAllDrawingsForUser(user); }
+      else if (cmd === '!test' && isAdmin) toggleTest();
+      else if (cmd === '!fin' && isAdmin) toggleRain();
+      else if (cmd === '!boom' && isAdmin) triggerBoom();
+      else if (cmd === '!pogo' && isAdmin) triggerPogo();
+      else if (cmd === '!fight' && isAdmin) triggerFight();
+      else if (cmd === '!velocidad' && isAdmin) {
+        if (args[1]==='1') { globalSpeedMultiplier=0.54; logConsole('speed','Vel → 1'); }
+        else if (args[1]==='2') { globalSpeedMultiplier=1.0; logConsole('speed','Vel → 2'); }
       }
     }
 
     // === BORRADO ===
-    function removeLastDrawing(targetUser) {
-      for (let i = drawings.length - 1; i >= 0; i--) {
-        if (drawings[i].user === targetUser) {
-          drawings[i].el.remove(); activeCodes.delete(drawings[i].code); drawings.splice(i, 1); return; 
-        }
-      }
+    function removeLastDrawing(u) {
+      for (let i=drawings.length-1;i>=0;i--) { if(drawings[i].user===u){drawings[i].el.remove();activeCodes.delete(drawings[i].code);drawings.splice(i,1);return;} }
     }
-
-    function removeAllDrawingsForUser(targetUser) {
-      drawings = drawings.filter(d => {
-        if (d.user === targetUser) { d.el.remove(); activeCodes.delete(d.code); return false; }
-        return true; 
-      });
+    function removeAllDrawingsForUser(u) {
+      drawings=drawings.filter(d=>{if(d.user===u){d.el.remove();activeCodes.delete(d.code);return false;}return true;});
     }
-
     function removeAllDrawingsGlobal() {
-       drawings.forEach(d => d.el.remove());
-       drawings = []; activeCodes.clear(); subQueue = []; isShowcaseBusy = false;
+      drawings.forEach(d=>d.el.remove()); drawings=[];activeCodes.clear();subQueue=[];isShowcaseBusy=false;
     }
 
     // === CREAR DIBUJO ===
     function createDrawing(user, fullCode, isSub, isTest, forceX) {
-      if (fullCode) fullCode = fullCode.replace(/=+$/, '');
+      if (fullCode) fullCode = fullCode.replace(/=+$/,'');
       if (!isTest && activeCodes.has(fullCode)) return;
-      
       try {
-        let pixelData = [], finalPalette = [];
-        const isV2 = fullCode.indexOf('v2') === 0; 
+        let pixelData=[], finalPalette=[];
+        const isV2 = fullCode.indexOf('v2')===0;
         if (isV2) {
-          const cleanCode = fullCode.substring(2);
-          const [headerHex, payload] = cleanCode.split('_');
-          if (!headerHex || !payload) return;
-          finalPalette.push('transparent'); 
-          for (let i = 0; i < headerHex.length; i += 6) finalPalette.push('#' + headerHex.substring(i, i+6));
-          const binaryString = atob(payload);
-          for (let i = 0; i < binaryString.length; i++) {
-            const byte = binaryString.charCodeAt(i);
-            pixelData.push((byte >> 4) & 0x0F, byte & 0x0F);
-          }
+          const c=fullCode.substring(2); const [h,p]=c.split('_');
+          if(!h||!p) return; finalPalette.push('transparent');
+          for(let i=0;i<h.length;i+=6) finalPalette.push('#'+h.substring(i,i+6));
+          const b=atob(p);
+          for(let i=0;i<b.length;i++){const v=b.charCodeAt(i);pixelData.push((v>>4)&0x0F,v&0x0F);}
         } else {
-          const [header, payload] = fullCode.split('_');
-          if (!header || !payload) return;
-          const safePayloadLen = payload.length - (payload.length % 2);
-          for (let i = 0; i < safePayloadLen; i += 2) {
-            const colorIdx = parseInt(payload[i], 16), count = parseInt(payload[i+1], 36);
-            if (isNaN(colorIdx) || isNaN(count) || count > 256) continue;
-            for (let j = 0; j < count; j++) pixelData.push(colorIdx);
-          }
-          for(let i=0; i < header.length; i++) {
-            if (header[i] === '1' && header[i+1] === '0') { finalPalette.push(colors[16]); i++; }
-            else { finalPalette.push(colors[parseInt(header[i], 16)]); }
-          }
+          const [h,p]=fullCode.split('_'); if(!h||!p) return;
+          const sl=p.length-(p.length%2);
+          for(let i=0;i<sl;i+=2){const ci=parseInt(p[i],16),cn=parseInt(p[i+1],36);if(isNaN(ci)||isNaN(cn)||cn>256)continue;for(let j=0;j<cn;j++)pixelData.push(ci);}
+          for(let i=0;i<h.length;i++){if(h[i]==='1'&&h[i+1]==='0'){finalPalette.push(colors[16]);i++;}else finalPalette.push(colors[parseInt(h[i],16)]);}
         }
+        if(!pixelData.length||!finalPalette.length) return;
 
-        if (pixelData.length === 0 || finalPalette.length === 0) return;
+        const itemEl=document.createElement('div'); itemEl.className='item';
+        const canvas=document.createElement('canvas'); canvas.className='pixel-art'; canvas.width=16;canvas.height=16;
+        const ctx=canvas.getContext('2d');
+        pixelData.forEach((idx,k)=>{if(finalPalette[idx]&&finalPalette[idx]!=='transparent'){ctx.fillStyle=finalPalette[idx];ctx.fillRect(k%16,Math.floor(k/16),1,1);}});
 
-        const itemEl = document.createElement('div');
-        itemEl.className = 'item';
-        const canvas = document.createElement('canvas');
-        canvas.className = 'pixel-art';
-        canvas.width = 16; canvas.height = 16;
-        const ctx = canvas.getContext('2d');
-        pixelData.forEach((idx, k) => {
-          if (finalPalette[idx] && finalPalette[idx] !== 'transparent') {
-            ctx.fillStyle = finalPalette[idx];
-            ctx.fillRect(k % 16, Math.floor(k / 16), 1, 1);
-          }
-        });
-
-        if (isSub) {
-            itemEl.classList.add('is-sub');
-            if (!isTest) itemEl.classList.add('waiting');
-        }
-        if (!isSub) itemEl.classList.add('jumping');
-
-        if (testMode && !isTest) itemEl.classList.add('hidden');
+        if(isSub){itemEl.classList.add('is-sub');if(!isTest)itemEl.classList.add('waiting');}
+        if(!isSub) itemEl.classList.add('jumping');
+        if(testMode&&!isTest) itemEl.classList.add('hidden');
         itemEl.appendChild(canvas);
-        const nickEl = document.createElement('div');
-        nickEl.className = 'nick'; 
-        nickEl.innerText = (isSub ? '⭐ ' : '') + user;
+        const nickEl=document.createElement('div');nickEl.className='nick';nickEl.innerText=(isSub?'⭐ ':'')+user;
         itemEl.appendChild(nickEl);
-        
-        const laneIdx = drawings.length % 4;
-        itemEl.style.zIndex = Z_INDEXES[laneIdx]; 
+
+        const laneIdx=drawings.length%4;
+        itemEl.style.zIndex=Z_INDEXES[laneIdx];
         document.getElementById('container').appendChild(itemEl);
 
-        let obj = { 
-            el: itemEl, user, code: fullCode, lane: laneIdx, 
-            speed: SPEEDS[laneIdx], y: LANES[laneIdx], x: forceX || -400, 
-            isTest, dying: false, vy: 0, rot: 0,
-            rainOriginX: 0, rainSpeed: 1, rainPhase: 0, loops: 0,
-            boomVx: 0, boomVy: 0, boomRot: 0, boomRotSpeed: 0
-        };
-
-        if (forceX === undefined) {
-          obj.x = getMinXInLane(laneIdx, null) - 350;
-        }
-        obj.rainOriginX = obj.x;
+        let obj={el:itemEl,user,code:fullCode,lane:laneIdx,speed:SPEEDS[laneIdx],y:LANES[laneIdx],x:forceX||-400,isTest,dying:false,vy:0,rot:0,rainOriginX:0,rainSpeed:1,rainPhase:0,loops:0,boomVx:0,boomVy:0,boomRot:0,boomRotSpeed:0,fightSide:null,fightSlotX:0,fightSlotY:0,fightPhase:Math.random()*7,fightDead:false};
+        if(forceX===undefined) obj.x=getMinXInLane(laneIdx,null)-350;
+        obj.rainOriginX=obj.x;
         drawings.push(obj);
-
-        if (!isTest) activeCodes.add(fullCode);
-        if (isSub) { subQueue.push(obj); processQueue(); }
-
-        logConsole(isSub ? 'sub' : 'user', `<b>${user}</b> → carril ${laneIdx + 1} (${isSub ? 'SUB' : 'normal'})`);
-      } catch(e) { console.error(e); }
+        if(!isTest) activeCodes.add(fullCode);
+        if(isSub){subQueue.push(obj);processQueue();}
+        logConsole(isSub?'sub':'user',`<b>${user}</b> → carril ${laneIdx+1} (${isSub?'SUB':'normal'})`);
+      } catch(e){console.error(e);}
     }
 
     // === SHOWCASE + ESPIRAL ===
     function processQueue() {
       if (!isShowcaseBusy && subQueue.length > 0) {
         isShowcaseBusy = true;
-        const current = subQueue.shift();
-        current.el.classList.remove('waiting', 'hidden');
-        current.el.classList.add('showcase');
-        logConsole('sub', `🎉 <b>${current.user}</b> BAILANDO en showcase`);
-
+        const cur = subQueue.shift();
+        cur.el.classList.remove('waiting','hidden');
+        cur.el.classList.add('showcase');
+        logConsole('sub', `🎉 <b>${cur.user}</b> BAILANDO`);
         setTimeout(() => {
-          current.el.classList.remove('showcase');
-
-          // FIX: Si boom está activo, saltar la espiral y mandar directo a volar
-          if (boomMode) {
-            current.el.style.transform = '';
-            current.x = 960;
-            current.y = 540;
-            assignBoomPhysics(current);
-            logConsole('boom', `💥 <b>${current.user}</b> sale del showcase directo al BOOM`);
-            isShowcaseBusy = false;
-            processQueue();
-            return;
+          cur.el.classList.remove('showcase');
+          // If any event is active, join it directly
+          if (isEventActive()) {
+            cur.el.style.transform='';
+            cur.x=960; cur.y=540;
+            if (activeEvent==='boom') assignBoomPhysics(cur);
+            else if (activeEvent==='pogo') { assignBoomPhysics(cur); cur.boomVy=-8; cur.y=400; }
+            else if (activeEvent==='fight') {
+              // Late joiner goes to a random side
+              cur.fightSide = Math.random()<0.5?'left':'right';
+              cur.fightSlotX = cur.fightSide==='left'?100+Math.random()*150:1650+Math.random()*150;
+              cur.fightSlotY = 200+Math.random()*600;
+            }
+            logConsole('event', `<b>${cur.user}</b> se une al evento ${activeEvent}`);
+            isShowcaseBusy=false; processQueue(); return;
           }
-
-          current.el.classList.add('spiral-to-lane');
-          logConsole('sub', `🌀 <b>${current.user}</b> espiral → carril ${current.lane + 1}`);
-
-          const targetX = 50;
-          const targetY = LANES[current.lane];
-          const startX = 960, startY = 540;
-          const startScale = 4.1, endScale = 1;
-          const totalSpins = 4;
-          const duration = 1400;
-          const startTime = performance.now();
-
-          function spiralStep(now) {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = 1 - Math.pow(1 - progress, 3);
-
-            const cx = startX + (targetX - startX) * ease;
-            const cy = startY + (targetY - startY) * ease;
-            const cs = startScale + (endScale - startScale) * ease;
-            const cr = totalSpins * 360 * progress;
-
-            current.el.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(${cs}) rotate(${cr}deg)`;
-
-            if (progress < 1) {
-              requestAnimationFrame(spiralStep);
-            } else {
-              current.el.classList.remove('spiral-to-lane');
-              current.el.style.transform = '';
-              current.x = targetX;
-              current.y = targetY;
-
-              // FIX: Si boom se activó DURANTE la espiral, mandar a volar
-              if (boomMode) {
-                assignBoomPhysics(current);
-                logConsole('boom', `💥 <b>${current.user}</b> terminó espiral, se une al BOOM`);
-              } else {
-                current.el.classList.add('jumping');
-                current.loops = 0;
-                logConsole('sub', `✅ <b>${current.user}</b> aterrizó en carril ${current.lane + 1}, caminando`);
-              }
-              
-              isShowcaseBusy = false;
-              processQueue();
+          // Normal spiral
+          cur.el.classList.add('spiral-to-lane');
+          logConsole('sub', `🌀 <b>${cur.user}</b> espiral → carril ${cur.lane+1}`);
+          const tX=50, tY=LANES[cur.lane], sX=960, sY=540, sS=4.1, eS=1, spins=4, dur=1400;
+          const st=performance.now();
+          function step(now){
+            const p=Math.min((now-st)/dur,1), e=1-Math.pow(1-p,3);
+            cur.el.style.transform=`translate3d(${sX+(tX-sX)*e}px,${sY+(tY-sY)*e}px,0) scale(${sS+(eS-sS)*e}) rotate(${spins*360*p}deg)`;
+            if(p<1){requestAnimationFrame(step);}
+            else{
+              cur.el.classList.remove('spiral-to-lane');cur.el.style.transform='';
+              cur.x=tX;cur.y=tY;
+              if(isEventActive()){
+                if(activeEvent==='boom')assignBoomPhysics(cur);
+                else if(activeEvent==='pogo'){assignBoomPhysics(cur);cur.boomVy=-8;cur.y=400;}
+              } else { cur.el.classList.add('jumping'); cur.loops=0; }
+              logConsole('sub',`✅ <b>${cur.user}</b> aterrizó`);
+              isShowcaseBusy=false; processQueue();
             }
           }
-          requestAnimationFrame(spiralStep);
+          requestAnimationFrame(step);
         }, 10000);
       }
     }
 
-    // === BOOM ===
-    function triggerBoom() {
-      if (boomMode) return;
-      if (drawings.length === 0) { logConsole('boom', 'No hay dibujos para explotar'); return; }
-      
-      boomMode = true;
-      rainMode = false;
-      logConsole('boom', `💥💥💥 BOOM ACTIVADO — ${drawings.length} dibujos rebotando por 25s`);
+    // ==============================================================
+    //  EVENTS
+    // ==============================================================
 
+    // --- BOOM ---
+    function triggerBoom() {
+      if (isEventActive()) return;
+      if (drawings.length < 2) { logConsole('boom','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'boom'; rainMode = false;
+      logConsole('boom', `💥💥💥 BOOM — ${drawings.length} dibujos, 30s`);
       drawings.forEach(d => {
-        if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting') || d.el.classList.contains('spiral-to-lane')) return;
+        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
         assignBoomPhysics(d);
       });
-
-      if (boomTimer) clearTimeout(boomTimer);
-      boomTimer = setTimeout(() => {
-        boomMode = false;
-        logConsole('boom', '💥 BOOM terminado — volviendo a carriles');
-        drawings.forEach((d, idx) => {
-          if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting')) return;
-          const laneIdx = idx % LANES.length;
-          d.lane = laneIdx;
-          d.y = LANES[laneIdx];
-          d.speed = SPEEDS[laneIdx];
-          d.el.style.zIndex = Z_INDEXES[laneIdx];
-          d.x = getMinXInLane(laneIdx, d) - 350;
-          d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
-        });
-      }, 25000);
+      eventTimer = setTimeout(endEvent, 30000);
     }
 
-    // === TEST PANEL ===
+    // --- POGO ---
+    function triggerPogo() {
+      if (isEventActive()) return;
+      if (drawings.length < 2) { logConsole('pogo','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'pogo'; rainMode = false;
+      logConsole('pogo', `🦘🦘🦘 POGO — ${drawings.length} dibujos rebotando en el suelo, 30s`);
+      drawings.forEach(d => {
+        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
+        d.el.classList.remove('jumping');
+        d.boomVx = (Math.random()-0.5) * 6;
+        d.boomVy = -(4 + Math.random()*8); // initial upward launch
+        d.boomRot = 0;
+        d.boomRotSpeed = (Math.random()-0.5)*8;
+      });
+      eventTimer = setTimeout(endEvent, 30000);
+    }
+
+    // --- FIGHT ---
+    function triggerFight() {
+      if (isEventActive()) return;
+      const eligible = drawings.filter(d => !d.el.classList.contains('showcase')&&!d.el.classList.contains('waiting')&&!d.el.classList.contains('spiral-to-lane'));
+      if (eligible.length < 4) { logConsole('fight','Necesitás al menos 4 dibujos'); return; }
+      
+      activeEvent = 'fight'; rainMode = false;
+      logConsole('fight', `⚔️⚔️⚔️ FIGHT — ${eligible.length} dibujos`);
+
+      // Shuffle and split into two teams
+      const shuffled = eligible.sort(() => Math.random()-0.5);
+      const half = Math.ceil(shuffled.length/2);
+      const leftTeam = shuffled.slice(0, half);
+      const rightTeam = shuffled.slice(half);
+
+      // Assign positions
+      leftTeam.forEach((d, i) => {
+        d.fightSide = 'left'; d.fightDead = false;
+        d.el.classList.remove('jumping');
+        d.fightSlotX = 80 + (i % 3) * 120;
+        d.fightSlotY = 150 + Math.floor(i / 3) * 180 + (i%2)*30;
+        d.fightPhase = Math.random()*7;
+      });
+      rightTeam.forEach((d, i) => {
+        d.fightSide = 'right'; d.fightDead = false;
+        d.el.classList.remove('jumping');
+        d.fightSlotX = 1550 + (i % 3) * 120;
+        d.fightSlotY = 150 + Math.floor(i / 3) * 180 + (i%2)*30;
+        d.fightPhase = Math.random()*7;
+      });
+
+      fightState = {
+        phase: 'lineup', // lineup -> fight-text -> fighting -> victory
+        leftTeam, rightTeam,
+        leftHP: leftTeam.length, rightHP: rightTeam.length,
+        leftMax: leftTeam.length, rightMax: rightTeam.length,
+        fightStartTime: 0, nextKillTime: 0, fightDuration: 25000
+      };
+
+      // Show HUD
+      const hud = document.getElementById('fight-hud');
+      hud.style.display = 'block';
+      document.getElementById('hp-left').style.width = '100%';
+      document.getElementById('hp-right').style.width = '100%';
+      document.getElementById('hp-label-left').textContent = `🔴 EQUIPO ROJO (${leftTeam.length})`;
+      document.getElementById('hp-label-right').textContent = `🔵 EQUIPO AZUL (${rightTeam.length})`;
+      document.getElementById('fight-text').style.display = 'none';
+      document.getElementById('fight-winner-text').style.display = 'none';
+
+      logConsole('fight', `Equipo 🔴: ${leftTeam.map(d=>d.user).join(', ')}`);
+      logConsole('fight', `Equipo 🔵: ${rightTeam.map(d=>d.user).join(', ')}`);
+
+      // After 8s lineup, show FIGHT!, then start fighting
+      setTimeout(() => {
+        if (activeEvent !== 'fight') return;
+        const ft = document.getElementById('fight-text');
+        ft.style.display = 'block';
+        logConsole('fight', '🔔 FIGHT!');
+        setTimeout(() => {
+          ft.style.display = 'none';
+          if (activeEvent !== 'fight' || !fightState) return;
+          fightState.phase = 'fighting';
+          fightState.fightStartTime = Date.now();
+          fightState.nextKillTime = Date.now() + 1500 + Math.random()*2000;
+
+          // End fight after fightDuration
+          eventTimer = setTimeout(() => {
+            if (activeEvent === 'fight' && fightState) finishFight();
+          }, fightState.fightDuration);
+        }, 2000); // FIGHT! text visible for 2s
+      }, 8000);
+    }
+
+    function fightTick(dt) {
+      if (!fightState || fightState.phase !== 'fighting') return;
+      const now = Date.now();
+      
+      if (now >= fightState.nextKillTime && fightState.leftHP > 0 && fightState.rightHP > 0) {
+        // Pick a side to lose one member
+        const side = Math.random() < 0.5 ? 'left' : 'right';
+        const team = side === 'left' ? fightState.leftTeam : fightState.rightTeam;
+        const alive = team.filter(d => !d.fightDead);
+        if (alive.length > 0) {
+          const victim = alive[Math.floor(Math.random()*alive.length)];
+          victim.fightDead = true;
+          victim.el.style.opacity = 0;
+          if (side === 'left') fightState.leftHP--;
+          else fightState.rightHP--;
+
+          // Update HP bars
+          document.getElementById('hp-left').style.width = (fightState.leftHP/fightState.leftMax*100)+'%';
+          document.getElementById('hp-right').style.width = (fightState.rightHP/fightState.rightMax*100)+'%';
+          
+          logConsole('fight', `💀 <b>${victim.user}</b> (${side==='left'?'🔴':'🔵'}) eliminado! [${fightState.leftHP} vs ${fightState.rightHP}]`);
+
+          // Check if one side is wiped
+          if (fightState.leftHP <= 0 || fightState.rightHP <= 0) {
+            finishFight();
+            return;
+          }
+        }
+        fightState.nextKillTime = now + 1000 + Math.random()*2500;
+      }
+    }
+
+    function finishFight() {
+      if (!fightState) return;
+      if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
+      fightState.phase = 'victory';
+
+      const winningSide = fightState.leftHP > 0 ? 'left' : (fightState.rightHP > 0 ? 'right' : 'left');
+      const winTeam = winningSide === 'left' ? fightState.leftTeam : fightState.rightTeam;
+      const winners = winTeam.filter(d => !d.fightDead);
+      const sideEmoji = winningSide === 'left' ? '🔴' : '🔵';
+      const sideName = winningSide === 'left' ? 'ROJO' : 'AZUL';
+
+      logConsole('fight', `🏆 EQUIPO ${sideEmoji} ${sideName} GANA! Sobrevivientes: ${winners.map(d=>d.user).join(', ')}`);
+
+      // Show winner text
+      const wt = document.getElementById('fight-winner-text');
+      wt.textContent = `🏆 EQUIPO ${sideName} GANA!`;
+      wt.style.display = 'block';
+
+      // Position winners in center for victory dance
+      winners.forEach((d, i) => {
+        d.el.style.opacity = 1;
+        const spacing = Math.min(200, 800 / winners.length);
+        d.x = 960 - (winners.length-1)*spacing/2 + i*spacing;
+        d.y = 480;
+      });
+
+      // After 8s of victory dance, end the event
+      setTimeout(() => {
+        document.getElementById('fight-hud').style.display = 'none';
+        // Restore all (including "dead" ones)
+        drawings.forEach(d => { d.fightDead = false; d.el.style.opacity = 1; });
+        endEvent();
+      }, 8000);
+    }
+
+    // ==============================================================
+    //  RANDOM EVENT SCHEDULER
+    // ==============================================================
+    function scheduleNextRandomEvent() {
+      if (randomEventScheduler) clearTimeout(randomEventScheduler);
+      // Random interval between 17 and 25 minutes (in ms)
+      const minMs = 17 * 60 * 1000, maxMs = 25 * 60 * 1000;
+      const delay = minMs + Math.random() * (maxMs - minMs);
+      const mins = (delay/60000).toFixed(1);
+      logConsole('event', `⏰ Próximo evento aleatorio en ~${mins} min`);
+      
+      randomEventScheduler = setTimeout(() => {
+        if (isEventActive() || isShowcaseBusy) {
+          // Retry in 1 min if busy
+          logConsole('event', '⏳ Evento pospuesto (ocupado), reintentando en 1min');
+          randomEventScheduler = setTimeout(() => scheduleNextRandomEvent(), 60000);
+          return;
+        }
+        if (drawings.length < 4) {
+          logConsole('event', '⏳ No hay suficientes dibujos, reintentando en 2min');
+          randomEventScheduler = setTimeout(() => scheduleNextRandomEvent(), 120000);
+          return;
+        }
+        // Pick a random event
+        const events = ['boom', 'pogo', 'fight'];
+        const pick = events[Math.floor(Math.random()*events.length)];
+        logConsole('event', `🎲 Evento aleatorio: <b>${pick.toUpperCase()}</b>`);
+        
+        if (pick === 'boom') triggerBoom();
+        else if (pick === 'pogo') triggerPogo();
+        else if (pick === 'fight') triggerFight();
+
+        // Schedule next after this one ends
+        // Wait for current event to finish + schedule
+        const waitForEnd = setInterval(() => {
+          if (!isEventActive()) {
+            clearInterval(waitForEnd);
+            scheduleNextRandomEvent();
+          }
+        }, 1000);
+      }, delay);
+    }
+
+    // Start scheduler on connection
+    function startRandomEvents() {
+      scheduleNextRandomEvent();
+    }
+
+    // ==============================================================
+    //  TEST PANEL
+    // ==============================================================
     function testAddUser() {
       testUserCounter++;
-      const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
-      createDrawing(name, TEST_CODE, false, true);
+      createDrawing(RANDOM_NAMES[Math.floor(Math.random()*RANDOM_NAMES.length)]+'_'+testUserCounter, TEST_CODE, false, true);
     }
-
     function testAddSub() {
       testUserCounter++;
-      const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
-      createDrawing(name, TEST_CODE, true, true);
+      createDrawing(RANDOM_NAMES[Math.floor(Math.random()*RANDOM_NAMES.length)]+'_'+testUserCounter, TEST_CODE, true, true);
     }
-
     function testSpeed(level) {
-      if (level === 1) globalSpeedMultiplier = 0.54;
-      else if (level === 2) globalSpeedMultiplier = 1.0;
-      document.getElementById('btn-spd1').classList.toggle('active', level === 1);
-      document.getElementById('btn-spd2').classList.toggle('active', level === 2);
-      logConsole('speed', `Velocidad → ${level} (${level === 1 ? 'lenta' : 'rápida'})`);
-      updateConsoleStats();
+      if(level===1)globalSpeedMultiplier=0.54; else globalSpeedMultiplier=1.0;
+      document.getElementById('btn-spd1').classList.toggle('active',level===1);
+      document.getElementById('btn-spd2').classList.toggle('active',level===2);
+      logConsole('speed',`Velocidad → ${level}`); updateConsoleStats();
     }
 
     let testSpawnTimer = null;
-
     function toggleTest() {
       testMode = !testMode;
       const bar = document.getElementById('test-bar');
-
       if (testMode) {
-        drawings.forEach(d => { if(!d.isTest) d.el.classList.add('hidden'); });
-        
-        bar.style.display = 'flex';
-        document.getElementById('test-console-body').innerHTML = '';
+        drawings.forEach(d=>{if(!d.isTest)d.el.classList.add('hidden');});
+        bar.style.display='flex';
+        document.getElementById('test-console-body').innerHTML='';
+        document.getElementById('btn-spd1').classList.toggle('active',globalSpeedMultiplier<0.9);
+        document.getElementById('btn-spd2').classList.toggle('active',globalSpeedMultiplier>=0.9);
+        logConsole('info','🧪 Modo test ACTIVADO');
 
-        document.getElementById('btn-spd1').classList.toggle('active', globalSpeedMultiplier < 0.9);
-        document.getElementById('btn-spd2').classList.toggle('active', globalSpeedMultiplier >= 0.9);
-
-        logConsole('info', '🧪 Modo test ACTIVADO');
-        logConsole('info', `Carriles: ${LANES.length} | Velocidad: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`);
-
-        let botIndex = 0;
-        const totalBots = 8;
-        testSpawnTimer = setInterval(() => {
-          if (botIndex >= totalBots || !testMode) { clearInterval(testSpawnTimer); testSpawnTimer = null; return; }
-          const isSub = Math.random() < 0.15;
+        let bi=0;
+        testSpawnTimer=setInterval(()=>{
+          if(bi>=8||!testMode){clearInterval(testSpawnTimer);testSpawnTimer=null;return;}
           testUserCounter++;
-          const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
-          createDrawing(name, TEST_CODE, isSub, true);
-          botIndex++;
-        }, 800);
-
+          createDrawing(RANDOM_NAMES[Math.floor(Math.random()*RANDOM_NAMES.length)]+'_'+testUserCounter,TEST_CODE,Math.random()<0.15,true);
+          bi++;
+        },800);
       } else {
-        if (testSpawnTimer) { clearInterval(testSpawnTimer); testSpawnTimer = null; }
-        if (boomTimer) { clearTimeout(boomTimer); boomTimer = null; }
-        boomMode = false;
-        rainMode = false;
-        
-        bar.style.display = 'none';
-
-        drawings = drawings.filter(d => {
-          if(d.isTest) { d.el.remove(); return false; }
-          d.el.classList.remove('hidden'); return true;
-        });
+        if(testSpawnTimer){clearInterval(testSpawnTimer);testSpawnTimer=null;}
+        if(eventTimer){clearTimeout(eventTimer);eventTimer=null;}
+        activeEvent=null; fightState=null; rainMode=false;
+        document.getElementById('fight-hud').style.display='none';
+        bar.style.display='none';
+        drawings=drawings.filter(d=>{if(d.isTest){d.el.remove();return false;}d.el.classList.remove('hidden');return true;});
       }
     }
 
     function toggleRain() {
-        rainMode = !rainMode;
-        if (boomMode) { boomMode = false; if (boomTimer) { clearTimeout(boomTimer); boomTimer = null; } }
-        logConsole('rain', rainMode ? '🌧️ Lluvia ACTIVADA' : '☀️ Lluvia DESACTIVADA');
-        drawings.forEach(d => {
-            if (rainMode) { d.rainOriginX = d.x; d.rainSpeed = 0.8 + Math.random() * 2; d.rainPhase = Math.random() * 7; }
-            else { d.y = LANES[d.lane]; }
-        });
+      if(isEventActive()){endEvent();}
+      rainMode=!rainMode;
+      logConsole('rain',rainMode?'🌧️ Lluvia ACTIVADA':'☀️ Lluvia DESACTIVADA');
+      drawings.forEach(d=>{
+        if(rainMode){d.rainOriginX=d.x;d.rainSpeed=0.8+Math.random()*2;d.rainPhase=Math.random()*7;}
+        else{d.y=LANES[d.lane];}
+      });
     }
 
     connectTwitch();
+    // Start random event scheduler after a short delay
+    setTimeout(startRandomEvents, 5000);
   </script>
 </body>
 </html>
