@@ -456,14 +456,23 @@
       }
     }
 
+    let testSpawnTimer = null;
+
     function toggleTest() {
       testMode = !testMode;
       if (testMode) {
         drawings.forEach(d => { if(!d.isTest) d.el.classList.add('hidden'); });
         const code = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
-        // ~15% probabilidad de ser sub, sin forceX para que entren desde la izquierda
-        for (let i = 0; i < 15; i++) createDrawing('Bot_' + i, code, (Math.random() < 0.15), true);
+        // Crear bots escalonados en el tiempo, como si fueran usuarios reales
+        let botIndex = 0;
+        const totalBots = 15;
+        testSpawnTimer = setInterval(() => {
+          if (botIndex >= totalBots || !testMode) { clearInterval(testSpawnTimer); testSpawnTimer = null; return; }
+          createDrawing('Bot_' + botIndex, code, (Math.random() < 0.15), true);
+          botIndex++;
+        }, 800); // un bot cada 800ms
       } else {
+        if (testSpawnTimer) { clearInterval(testSpawnTimer); testSpawnTimer = null; }
         drawings = drawings.filter(d => {
           if(d.isTest) { d.el.remove(); return false; }
           d.el.classList.remove('hidden'); return true;
