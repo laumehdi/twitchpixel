@@ -433,8 +433,8 @@
         drawings.push(obj);
         if (!isTest) {
           activeCodes.add(fullCode);
-          if (isSub) { subQueue.push(obj); processQueue(); }
         }
+        if (isSub) { subQueue.push(obj); processQueue(); }
       } catch(e) { console.error(e); }
     }
 
@@ -461,7 +461,8 @@
       if (testMode) {
         drawings.forEach(d => { if(!d.isTest) d.el.classList.add('hidden'); });
         const code = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
-        for (let i = 0; i < 15; i++) createDrawing('Bot_' + i, code, (i % 2 === 0), true, (Math.random() * 1700));
+        // ~15% probabilidad de ser sub, sin forceX para que entren desde la izquierda
+        for (let i = 0; i < 15; i++) createDrawing('Bot_' + i, code, (Math.random() < 0.15), true);
       } else {
         drawings = drawings.filter(d => {
           if(d.isTest) { d.el.remove(); return false; }
