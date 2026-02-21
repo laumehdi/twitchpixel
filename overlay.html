@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V20 - Bugfix</title>
+  <title>Overlay Alpha Gold V21 - Test Panel + Boom</title>
   <style>
     html, body { 
       margin: 0; padding: 0; 
@@ -38,11 +38,10 @@
       will-change: transform; 
     }
 
-    canvas { 
+    canvas.pixel-art { 
       image-rendering: pixelated; 
       width: 165px; height: 165px; 
       background: transparent; 
-      /* FIX: Removida transition innecesaria que no hacía nada útil */
       z-index: 2; 
     }
 
@@ -136,12 +135,137 @@
     .spiral-to-lane .nick {
       transition: font-size 1.2s ease-in;
       font-size: 22px !important;
-    } 
+    }
+
+    /* === TEST PANEL === */
+    #test-panel {
+      display: none;
+      position: fixed;
+      top: 10px; left: 10px; right: 10px;
+      z-index: 100000;
+      pointer-events: auto;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #test-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px;
+      background: rgba(0,0,0,0.85);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #test-buttons button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, filter 0.1s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    #test-buttons button:hover { transform: scale(1.05); filter: brightness(1.1); }
+    #test-buttons button:active { transform: scale(0.97); }
+
+    .btn-user    { background: #4CAF50; color: white; }
+    .btn-sub     { background: #FFD700; color: #333; }
+    .btn-speed   { background: #2196F3; color: white; }
+    .btn-rain    { background: #9C27B0; color: white; }
+    .btn-boom    { background: #f44336; color: white; font-size: 16px !important; }
+    .btn-exit    { background: #616161; color: white; }
+    .btn-clear   { background: #FF5722; color: white; }
+
+    .btn-speed.active { box-shadow: 0 0 0 3px #fff; }
+
+    /* === CONSOLA DE DEBUG === */
+    #test-console {
+      display: none;
+      position: fixed;
+      bottom: 10px; right: 10px;
+      width: 460px; height: 280px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid #444;
+      border-radius: 10px;
+      z-index: 100000;
+      pointer-events: auto;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #test-console-header {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.08);
+      color: #aaa;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #test-console-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #test-console-body::-webkit-scrollbar { width: 6px; }
+    #test-console-body::-webkit-scrollbar-track { background: transparent; }
+    #test-console-body::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+
+    .log-line {
+      padding: 2px 0;
+      line-height: 1.5;
+      color: #ccc;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .log-line .time { color: #666; }
+    .log-line .tag-lane { color: #4FC3F7; }
+    .log-line .tag-user { color: #81C784; }
+    .log-line .tag-sub { color: #FFD740; }
+    .log-line .tag-boom { color: #FF5252; }
+    .log-line .tag-speed { color: #64B5F6; }
+    .log-line .tag-rain { color: #CE93D8; }
+    .log-line .tag-info { color: #aaa; }
   </style>
 </head>
 <body>
   <div id="status">CARGANDO...</div>
   <div id="container"></div>
+
+  <!-- TEST PANEL -->
+  <div id="test-panel">
+    <div id="test-buttons">
+      <button class="btn-user" onclick="testAddUser()">➕ Usuario</button>
+      <button class="btn-sub" onclick="testAddSub()">⭐ Subscriptor</button>
+      <button class="btn-speed" id="btn-spd1" onclick="testSpeed(1)">🐢 Vel 1</button>
+      <button class="btn-speed" id="btn-spd2" onclick="testSpeed(2)">🐇 Vel 2</button>
+      <button class="btn-rain" onclick="toggleRain()">🌧️ Lluvia</button>
+      <button class="btn-boom" onclick="triggerBoom()">💥 BOOM</button>
+      <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info', 'Todos los dibujos eliminados')">🗑️ Limpiar</button>
+      <button class="btn-exit" onclick="toggleTest()">❌ Salir Test</button>
+    </div>
+  </div>
+
+  <!-- CONSOLA -->
+  <div id="test-console">
+    <div id="test-console-header">
+      <span>📟 Consola</span>
+      <span id="console-stats"></span>
+    </div>
+    <div id="test-console-body"></div>
+  </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
@@ -153,13 +277,26 @@
     
     const colors = ['transparent','#000000','#aa0000','#00aa00','#aa5500','#0000aa','#aa00aa','#00aaaa','#aaaaaa','#555555','#ff5555','#55ff55','#ffff55','#5555ff','#ff55ff','#55ffff','#ffffff'];
     
+    const TEST_CODE = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
+
+    const RANDOM_NAMES = [
+      'PixelMaster','xDarkSoul','CoolCat99','TwitchFan','GamerGirl','NightOwl42',
+      'StarPlayer','MoonWalk','FireStorm','IceQueen','ShadowNinja','ThunderBolt',
+      'CosmicDust','NeonLight','RetroGamer','DigitalArt','PixelPunk','ChipTune',
+      'BitCrusher','WaveRider','CyberWolf','TurboFox','LaserBeam','RocketFuel',
+      'QuantumLeap','ZeroGravity','SuperNova','MegaByte','HyperLink','GlitchHop'
+    ];
+
     let drawings = []; 
     let testMode = false;
     let rainMode = false; 
+    let boomMode = false;
     let subQueue = [];
     let isShowcaseBusy = false;
     let ws = null;
     let activeCodes = new Set(); 
+    let testUserCounter = 0;
+    let boomTimer = null;
 
     // === VELOCIDAD ===
     let globalSpeedMultiplier = 0.54; 
@@ -170,7 +307,31 @@
 
     let lastTime = performance.now();
 
-    // FIX: Helper para calcular la X mínima real en un carril
+    // === CONSOLA DE DEBUG ===
+    function logConsole(tag, message) {
+      if (!testMode) return;
+      const body = document.getElementById('test-console-body');
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('es', { hour12: false });
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="time">${timeStr}</span> <span class="tag-${tag}">[${tag.toUpperCase()}]</span> ${message}`;
+      body.appendChild(line);
+      body.scrollTop = body.scrollHeight;
+      // Mantener máximo 200 líneas
+      while (body.children.length > 200) body.removeChild(body.firstChild);
+      updateConsoleStats();
+    }
+
+    function updateConsoleStats() {
+      const el = document.getElementById('console-stats');
+      if (!el) return;
+      const laneCounts = [0,0,0,0];
+      drawings.forEach(d => { if (!d.el.classList.contains('showcase') && !d.el.classList.contains('hidden')) laneCounts[d.lane]++; });
+      el.textContent = `Dibujos: ${drawings.length} | C1:${laneCounts[0]} C2:${laneCounts[1]} C3:${laneCounts[2]} C4:${laneCounts[3]} | Vel: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`;
+    }
+
+    // Helper para calcular la X mínima real en un carril
     function getMinXInLane(laneIdx, excludeObj) {
       let minX = Infinity;
       drawings.forEach(d => {
@@ -181,10 +342,9 @@
       return minX === Infinity ? -200 : minX;
     }
 
+    // === LOOP PRINCIPAL ===
     function animate(currentTime) {
       if (!currentTime) currentTime = performance.now();
-      
-      // FIX: Clampear dt para evitar saltos enormes al perder/recuperar foco
       const dt = Math.min((currentTime - lastTime) / 16.666, 3);
       lastTime = currentTime;
       const now = Date.now(); 
@@ -192,10 +352,28 @@
       for (let i = drawings.length - 1; i >= 0; i--) {
         let d = drawings[i];
         if (d.el.classList.contains('showcase') || d.el.classList.contains('hidden')) continue;
+        if (d.el.classList.contains('spiral-to-lane')) continue;
         
         if (d.el.classList.contains('waiting')) {
              d.el.style.transform = 'translate3d(-500px, -500px, 0)';
              continue;
+        }
+
+        // === BOOM MODE ===
+        if (boomMode) {
+            d.el.style.opacity = 1;
+            d.x += d.boomVx * dt;
+            d.y += d.boomVy * dt;
+            d.boomRot += d.boomRotSpeed * dt;
+
+            // Rebote en bordes (ping pong)
+            if (d.x < -80) { d.x = -80; d.boomVx = Math.abs(d.boomVx); }
+            if (d.x > 1840) { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
+            if (d.y < -80) { d.y = -80; d.boomVy = Math.abs(d.boomVy); }
+            if (d.y > 980) { d.y = 980; d.boomVy = -Math.abs(d.boomVy); }
+
+            d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0) rotate(${d.boomRot}deg)`;
+            continue;
         }
         
         if (rainMode) {
@@ -225,14 +403,15 @@
                   d.el.classList.remove('jumping');
               }
 
+              const oldLane = d.lane;
               const newLaneIdx = Math.floor(Math.random() * LANES.length);
               d.lane = newLaneIdx;
               d.y = LANES[newLaneIdx];
               d.speed = SPEEDS[newLaneIdx];
               d.el.style.zIndex = Z_INDEXES[newLaneIdx];
-
-              // FIX: Usar helper que calcula la X mínima real
               d.x = getMinXInLane(newLaneIdx, d) - 350;
+
+              logConsole('lane', `<b>${d.user}</b> loop #${d.loops} → carril ${newLaneIdx + 1} ${oldLane !== newLaneIdx ? '(cambió)' : '(mismo)'}`);
             }
             d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
         }
@@ -241,6 +420,7 @@
     }
     requestAnimationFrame(animate);
 
+    // === TWITCH CONNECTION ===
     function connectTwitch() {
       if (ws) { try { ws.close(); } catch(e){} }
       const statusEl = document.getElementById('status');
@@ -256,14 +436,12 @@
         ws.send('JOIN #' + CHANNEL.toLowerCase());
       };
       ws.onclose = () => { statusEl.innerText = "DESCONECTADO"; statusEl.style.display = 'block'; setTimeout(connectTwitch, 3000); };
-      // FIX: Agregar handler de error para el WebSocket
       ws.onerror = (e) => { console.error('WebSocket error:', e); };
       ws.onmessage = (e) => handleMessage(e.data);
     }
 
     // === MANEJADOR DE MENSAJES ===
     function handleMessage(data) {
-      // FIX: Verificar que el mensaje EMPIECE con PING, no que simplemente lo contenga
       if (data.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); return; }
       if (data.indexOf('PRIVMSG') !== -1) {
         const parts = data.split('PRIVMSG #' + CHANNEL.toLowerCase() + ' :');
@@ -273,7 +451,6 @@
         const rawTags = data.split('PRIVMSG')[0];
         const userMatch = data.match(/:(\w+)!/);
         const user = userMatch ? userMatch[1].toLowerCase() : 'unknown';
-        // FIX: Detección de suscriptor más robusta con regex
         const isSub = /subscriber=1/.test(rawTags) || /badges=[^;]*(?:subscriber|founder)/.test(rawTags);
         const isAdmin = (user === CHANNEL.toLowerCase());
 
@@ -282,46 +459,29 @@
         const argTarget = args[1] ? args[1].replace('@', '').toLowerCase() : null;
 
         if (command === '!dibujar') {
-          if (args[1]) {
-             createDrawing(user, args[1], isSub, false);
-          }
+          if (args[1]) createDrawing(user, args[1], isSub, false);
         } 
         else if (command === '!borrar') {
-          // !borrar @target (Admin) -> Borra ULTIMO de target
-          if (isAdmin && argTarget) {
-            removeLastDrawing(argTarget);
-          } 
-          // !borrar (Cualquiera) -> Borra ULTIMO propio
-          else {
-            removeLastDrawing(user);
-          }
+          if (isAdmin && argTarget) removeLastDrawing(argTarget);
+          else removeLastDrawing(user);
         } 
         else if (command === '!limpiar') {
-          // !limpiar @target (Admin) -> Borra TODO de target (NUEVO)
-          if (isAdmin && argTarget) {
-             removeAllDrawingsForUser(argTarget);
-          }
-          // !limpiar (Admin) -> Borra TODO GLOBAL
-          else if (isAdmin) {
-             removeAllDrawingsGlobal();
-          } 
-          // !limpiar (Usuario) -> Borra TODO PROPIO
-          else {
-             removeAllDrawingsForUser(user);
-          }
+          if (isAdmin && argTarget) removeAllDrawingsForUser(argTarget);
+          else if (isAdmin) removeAllDrawingsGlobal();
+          else removeAllDrawingsForUser(user);
         }
         else if (command === '!test' && isAdmin) { toggleTest(); }
         else if (command === '!fin' && isAdmin) { toggleRain(); }
+        else if (command === '!boom' && isAdmin) { triggerBoom(); }
         else if (command === '!velocidad' && isAdmin) {
              const level = args[1];
-             if (level === '1') { globalSpeedMultiplier = 0.54; } 
-             else if (level === '2') { globalSpeedMultiplier = 1.0; }
+             if (level === '1') { globalSpeedMultiplier = 0.54; logConsole('speed', 'Velocidad → 1 (lenta)'); } 
+             else if (level === '2') { globalSpeedMultiplier = 1.0; logConsole('speed', 'Velocidad → 2 (rápida)'); }
         }
       }
     }
 
     // === FUNCIONES DE BORRADO ===
-
     function removeLastDrawing(targetUser) {
       for (let i = drawings.length - 1; i >= 0; i--) {
         if (drawings[i].user === targetUser) {
@@ -335,11 +495,7 @@
 
     function removeAllDrawingsForUser(targetUser) {
       drawings = drawings.filter(d => {
-        if (d.user === targetUser) {
-           d.el.remove();
-           activeCodes.delete(d.code);
-           return false; 
-        }
+        if (d.user === targetUser) { d.el.remove(); activeCodes.delete(d.code); return false; }
         return true; 
       });
     }
@@ -363,7 +519,6 @@
         if (isV2) {
           const cleanCode = fullCode.substring(2);
           const [headerHex, payload] = cleanCode.split('_');
-          // FIX: Validar que exista el payload antes de procesarlo
           if (!headerHex || !payload) return;
           finalPalette.push('transparent'); 
           for (let i = 0; i < headerHex.length; i += 6) finalPalette.push('#' + headerHex.substring(i, i+6));
@@ -374,12 +529,11 @@
           }
         } else {
           const [header, payload] = fullCode.split('_');
-          // FIX: Validar que existan header y payload, y que payload tenga largo par
           if (!header || !payload) return;
-          const safePayloadLen = payload.length - (payload.length % 2); // asegurar largo par
+          const safePayloadLen = payload.length - (payload.length % 2);
           for (let i = 0; i < safePayloadLen; i += 2) {
             const colorIdx = parseInt(payload[i], 16), count = parseInt(payload[i+1], 36);
-            if (isNaN(colorIdx) || isNaN(count) || count > 256) continue; // FIX: Validar valores
+            if (isNaN(colorIdx) || isNaN(count) || count > 256) continue;
             for (let j = 0; j < count; j++) pixelData.push(colorIdx);
           }
           for(let i=0; i < header.length; i++) {
@@ -388,12 +542,12 @@
           }
         }
 
-        // FIX: Validar que se haya generado algo antes de crear el DOM
         if (pixelData.length === 0 || finalPalette.length === 0) return;
 
         const itemEl = document.createElement('div');
         itemEl.className = 'item';
         const canvas = document.createElement('canvas');
+        canvas.className = 'pixel-art';
         canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d');
         pixelData.forEach((idx, k) => {
@@ -410,6 +564,10 @@
         if (!isTest && !isSub) {
             itemEl.classList.add('jumping');
         }
+        // En test, los no-sub también saltan en su primer loop
+        if (isTest && !isSub) {
+            itemEl.classList.add('jumping');
+        }
 
         if (testMode && !isTest) itemEl.classList.add('hidden');
         itemEl.appendChild(canvas);
@@ -423,110 +581,186 @@
         document.getElementById('container').appendChild(itemEl);
 
         let obj = { 
-            el: itemEl, 
-            user, 
-            code: fullCode, 
-            lane: laneIdx, 
-            speed: SPEEDS[laneIdx], 
-            y: LANES[laneIdx], 
-            x: forceX || -400, 
-            isTest, 
-            dying: false, 
-            rainOriginX: 0, 
-            rainSpeed: 1, 
-            rainPhase: 0,
-            loops: 0
+            el: itemEl, user, code: fullCode, lane: laneIdx, 
+            speed: SPEEDS[laneIdx], y: LANES[laneIdx], x: forceX || -400, 
+            isTest, dying: false, vy: 0, rot: 0,
+            rainOriginX: 0, rainSpeed: 1, rainPhase: 0, loops: 0,
+            boomVx: 0, boomVy: 0, boomRot: 0, boomRotSpeed: 0
         };
 
         if (forceX === undefined) {
-          // FIX: Usar helper para calcular X mínima real
           obj.x = getMinXInLane(laneIdx, null) - 350;
         }
         obj.rainOriginX = obj.x;
         drawings.push(obj);
-        if (!isTest) {
-          activeCodes.add(fullCode);
-        }
+
+        if (!isTest) activeCodes.add(fullCode);
         if (isSub) { subQueue.push(obj); processQueue(); }
+
+        logConsole(isSub ? 'sub' : 'user', `<b>${user}</b> → carril ${laneIdx + 1} (${isSub ? 'SUB' : 'normal'})`);
       } catch(e) { console.error(e); }
     }
 
+    // === SHOWCASE + ESPIRAL ===
     function processQueue() {
       if (!isShowcaseBusy && subQueue.length > 0) {
         isShowcaseBusy = true;
         const current = subQueue.shift();
         current.el.classList.remove('waiting', 'hidden');
         current.el.classList.add('showcase');
+        logConsole('sub', `🎉 <b>${current.user}</b> BAILANDO en showcase`);
 
-        // Después de 10s bailando, iniciar transición espiral al carril
         setTimeout(() => {
           current.el.classList.remove('showcase');
           current.el.classList.add('spiral-to-lane');
+          logConsole('sub', `🌀 <b>${current.user}</b> espiral → carril ${current.lane + 1}`);
 
-          // Posición destino: borde izquierdo del carril asignado
-          const targetX = 50; // un poquito visible en el borde izquierdo
+          const targetX = 50;
           const targetY = LANES[current.lane];
-
-          // Empezar la espiral desde el centro de pantalla
-          const startX = 960;
-          const startY = 540;
-          const startScale = 4.1;
-          const endScale = 1;
-          const totalSpins = 4; // giros totales durante la espiral
-          const duration = 1400; // ms
+          const startX = 960, startY = 540;
+          const startScale = 4.1, endScale = 1;
+          const totalSpins = 4;
+          const duration = 1400;
           const startTime = performance.now();
 
           function spiralStep(now) {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
-
-            // Easing: empieza rápido, frena al final (ease-out cúbico)
             const ease = 1 - Math.pow(1 - progress, 3);
 
-            const currentX = startX + (targetX - startX) * ease;
-            const currentY = startY + (targetY - startY) * ease;
-            const currentScale = startScale + (endScale - startScale) * ease;
-            const currentRotation = totalSpins * 360 * progress;
+            const cx = startX + (targetX - startX) * ease;
+            const cy = startY + (targetY - startY) * ease;
+            const cs = startScale + (endScale - startScale) * ease;
+            const cr = totalSpins * 360 * progress;
 
-            current.el.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(${currentScale}) rotate(${currentRotation}deg)`;
+            current.el.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(${cs}) rotate(${cr}deg)`;
 
             if (progress < 1) {
               requestAnimationFrame(spiralStep);
             } else {
-              // Aterrizó en el carril: limpiar y empezar a caminar saltando
               current.el.classList.remove('spiral-to-lane');
               current.el.style.transform = '';
               current.x = targetX;
               current.y = targetY;
               current.el.classList.add('jumping');
-              current.loops = 0; // va a saltar al menos 1 loop completo
+              current.loops = 0;
               isShowcaseBusy = false;
+              logConsole('sub', `✅ <b>${current.user}</b> aterrizó en carril ${current.lane + 1}, caminando`);
               processQueue();
             }
           }
-
           requestAnimationFrame(spiralStep);
         }, 10000);
       }
+    }
+
+    // === BOOM MODE ===
+    function triggerBoom() {
+      if (boomMode) return; // ya está activo
+      if (drawings.length === 0) { logConsole('boom', 'No hay dibujos para explotar'); return; }
+      
+      boomMode = true;
+      rainMode = false;
+      logConsole('boom', `💥💥💥 BOOM ACTIVADO — ${drawings.length} dibujos rebotando por 25s`);
+
+      // Asignar velocidades y dirección aleatoria a cada dibujo
+      drawings.forEach(d => {
+        if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting')) return;
+        d.el.classList.remove('jumping');
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 3 + Math.random() * 5; // velocidad no tan rápida pero loca
+        d.boomVx = Math.cos(angle) * speed;
+        d.boomVy = Math.sin(angle) * speed;
+        d.boomRot = 0;
+        d.boomRotSpeed = (Math.random() - 0.5) * 12; // giro aleatorio
+      });
+
+      // Después de 25s, volver a carriles normales
+      if (boomTimer) clearTimeout(boomTimer);
+      boomTimer = setTimeout(() => {
+        boomMode = false;
+        logConsole('boom', '💥 BOOM terminado — volviendo a carriles');
+        // Reasignar cada dibujo a un carril
+        drawings.forEach((d, idx) => {
+          if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting')) return;
+          const laneIdx = idx % LANES.length;
+          d.lane = laneIdx;
+          d.y = LANES[laneIdx];
+          d.speed = SPEEDS[laneIdx];
+          d.el.style.zIndex = Z_INDEXES[laneIdx];
+          d.x = getMinXInLane(laneIdx, d) - 350;
+          d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
+        });
+      }, 25000);
+    }
+
+    // === TEST PANEL FUNCTIONS ===
+    function testAddUser() {
+      testUserCounter++;
+      const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
+      createDrawing(name, TEST_CODE, false, true);
+    }
+
+    function testAddSub() {
+      testUserCounter++;
+      const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
+      createDrawing(name, TEST_CODE, true, true);
+    }
+
+    function testSpeed(level) {
+      if (level === 1) { globalSpeedMultiplier = 0.54; }
+      else if (level === 2) { globalSpeedMultiplier = 1.0; }
+      document.getElementById('btn-spd1').classList.toggle('active', level === 1);
+      document.getElementById('btn-spd2').classList.toggle('active', level === 2);
+      logConsole('speed', `Velocidad → ${level} (${level === 1 ? 'lenta' : 'rápida'})`);
+      updateConsoleStats();
     }
 
     let testSpawnTimer = null;
 
     function toggleTest() {
       testMode = !testMode;
+      const panel = document.getElementById('test-panel');
+      const consolEl = document.getElementById('test-console');
+
       if (testMode) {
+        // Ocultar dibujos reales
         drawings.forEach(d => { if(!d.isTest) d.el.classList.add('hidden'); });
-        const code = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
-        // Crear bots escalonados en el tiempo, como si fueran usuarios reales
+        
+        // Mostrar panel y consola
+        panel.style.display = 'block';
+        consolEl.style.display = 'flex';
+        document.getElementById('test-console-body').innerHTML = '';
+
+        // Highlight velocidad actual
+        document.getElementById('btn-spd1').classList.toggle('active', globalSpeedMultiplier < 0.9);
+        document.getElementById('btn-spd2').classList.toggle('active', globalSpeedMultiplier >= 0.9);
+
+        logConsole('info', '🧪 Modo test ACTIVADO');
+        logConsole('info', `Carriles: ${LANES.length} | Velocidad: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`);
+
+        // Spawnear bots iniciales escalonados
         let botIndex = 0;
-        const totalBots = 15;
+        const totalBots = 8;
         testSpawnTimer = setInterval(() => {
           if (botIndex >= totalBots || !testMode) { clearInterval(testSpawnTimer); testSpawnTimer = null; return; }
-          createDrawing('Bot_' + botIndex, code, (Math.random() < 0.15), true);
+          const isSub = Math.random() < 0.15;
+          testUserCounter++;
+          const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
+          createDrawing(name, TEST_CODE, isSub, true);
           botIndex++;
-        }, 800); // un bot cada 800ms
+        }, 800);
+
       } else {
         if (testSpawnTimer) { clearInterval(testSpawnTimer); testSpawnTimer = null; }
+        if (boomTimer) { clearTimeout(boomTimer); boomTimer = null; }
+        boomMode = false;
+        rainMode = false;
+        
+        panel.style.display = 'none';
+        consolEl.style.display = 'none';
+
+        // Limpiar test drawings, restaurar reales
         drawings = drawings.filter(d => {
           if(d.isTest) { d.el.remove(); return false; }
           d.el.classList.remove('hidden'); return true;
@@ -536,6 +770,8 @@
 
     function toggleRain() {
         rainMode = !rainMode;
+        if (boomMode) { boomMode = false; if (boomTimer) { clearTimeout(boomTimer); boomTimer = null; } }
+        logConsole('rain', rainMode ? '🌧️ Lluvia ACTIVADA' : '☀️ Lluvia DESACTIVADA');
         drawings.forEach(d => {
             if (rainMode) { d.rainOriginX = d.x; d.rainSpeed = 0.8 + Math.random() * 2; d.rainPhase = Math.random() * 7; }
             else { d.y = LANES[d.lane]; }
