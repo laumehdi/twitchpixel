@@ -2,8 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V21 - Test Panel + Boom</title>
+  <title>Overlay Alpha Gold V22</title>
   <style>
+    /* === Solarized Dark Palette ===
+       base03: #002b36  base02: #073642  base01: #586e75  base00: #657b83
+       base0:  #839496  base1:  #93a1a1  base2:  #eee8d5  base3:  #fdf6e3
+       yellow: #b58900  orange: #cb4b16  red:    #dc322f  magenta:#d33682
+       violet: #6c71c4  blue:   #268bd2  cyan:   #2aa198  green:  #859900
+    */
+
     html, body { 
       margin: 0; padding: 0; 
       background: transparent !important; 
@@ -45,7 +52,6 @@
       z-index: 2; 
     }
 
-    /* Animación normal de salto */
     @keyframes jumpBounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-30px); } 
@@ -55,59 +61,35 @@
       animation: jumpBounce 0.8s ease-in-out infinite;
     }
 
-    /* === SUBS EN CARRIL NORMAL === */
-    .is-sub canvas {
-       filter: brightness(1.15);
-    }
+    .is-sub canvas { filter: brightness(1.15); }
     
     .nick { 
-      color: white; 
-      font-weight: 900;
-      font-size: 22px; 
-      width: 280px; 
-      text-align: center;
-      margin-top: 2px;
-      white-space: nowrap;
-      text-shadow: 2px 2px 0 #000; 
-      z-index: 3;
+      color: white; font-weight: 900; font-size: 22px; 
+      width: 280px; text-align: center; margin-top: 2px;
+      white-space: nowrap; text-shadow: 2px 2px 0 #000; z-index: 3;
     }
 
-    .is-sub .nick {
-      color: #FFD700;
-    }
+    .is-sub .nick { color: #FFD700; }
 
-    /* === SHOWCASE CENTRAL === */
+    /* === SHOWCASE === */
     .showcase {
-      position: fixed !important; 
-      top: 50% !important; 
-      left: 50% !important;
-      z-index: 99999 !important;
-      will-change: transform;
+      position: fixed !important; top: 50% !important; left: 50% !important;
+      z-index: 99999 !important; will-change: transform;
       animation: superDance 0.8s infinite ease-in-out !important;
     }
-
     .showcase::before {
-      content: '';
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 280px; height: 280px; 
-      transform: translate(-50%, -60%); 
-      z-index: 1; 
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 255, 224, 0.9) 0%, rgba(255, 215, 0, 0.5) 40%, transparent 70%);
+      content: ''; position: absolute; top: 50%; left: 50%;
+      width: 280px; height: 280px; transform: translate(-50%, -60%); 
+      z-index: 1; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,224,0.9) 0%, rgba(255,215,0,0.5) 40%, transparent 70%);
       animation: auraPulse 1.5s infinite alternate ease-in-out;
     }
-
-    .showcase canvas {
-      filter: brightness(1.1); 
-    }
-    
+    .showcase canvas { filter: brightness(1.1); }
     .showcase .nick {
        font-size: 33px !important;
        text-shadow: 3px 3px 0 #000, 0 0 10px rgba(0,0,0,0.5);
        margin-top: 15px;
     }
-
     @keyframes superDance {
       0%   { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
       25%  { transform: translate(-50%, -50%) scale(4.4) rotate(-5deg); } 
@@ -115,7 +97,6 @@
       75%  { transform: translate(-50%, -50%) scale(4.4) rotate(5deg); }
       100% { transform: translate(-50%, -50%) scale(4.1) rotate(0deg); }
     }
-
     @keyframes auraPulse {
       0% { transform: translate(-50%, -60%) scale(1); opacity: 0.7; }
       100% { transform: translate(-50%, -60%) scale(1.15); opacity: 1; }
@@ -124,74 +105,75 @@
     .hidden { display: none !important; }
     .waiting { opacity: 0; }
 
-    /* === TRANSICIÓN ESPIRAL: del showcase al carril === */
     .spiral-to-lane {
-      position: absolute !important;
-      z-index: 99998 !important;
-      will-change: transform;
-      pointer-events: none;
+      position: absolute !important; z-index: 99998 !important;
+      will-change: transform; pointer-events: none;
     }
-
     .spiral-to-lane .nick {
       transition: font-size 1.2s ease-in;
       font-size: 22px !important;
     }
 
-    /* === TEST PANEL === */
-    #test-panel {
+    /* ============================================
+       TEST PANEL - Solarized Dark
+       ============================================ */
+    #test-bar {
       display: none;
       position: fixed;
-      top: 10px; left: 10px; right: 10px;
+      bottom: 10px; left: 10px;
       z-index: 100000;
       pointer-events: auto;
       font-family: 'Segoe UI', sans-serif;
+      display: none;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 10px;
     }
 
     #test-buttons {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
-      padding: 12px;
-      background: rgba(0,0,0,0.85);
+      max-width: 340px;
+      padding: 10px;
+      background: #002b36;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid #073642;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
 
     #test-buttons button {
-      padding: 10px 18px;
+      padding: 9px 14px;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 6px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.1s, filter 0.1s;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      font-family: 'Segoe UI', sans-serif;
     }
-    #test-buttons button:hover { transform: scale(1.05); filter: brightness(1.1); }
+    #test-buttons button:hover { transform: scale(1.05); filter: brightness(1.15); }
     #test-buttons button:active { transform: scale(0.97); }
 
-    .btn-user    { background: #4CAF50; color: white; }
-    .btn-sub     { background: #FFD700; color: #333; }
-    .btn-speed   { background: #2196F3; color: white; }
-    .btn-rain    { background: #9C27B0; color: white; }
-    .btn-boom    { background: #f44336; color: white; font-size: 16px !important; }
-    .btn-exit    { background: #616161; color: white; }
-    .btn-clear   { background: #FF5722; color: white; }
+    .btn-user    { background: #859900; color: #002b36; }
+    .btn-sub     { background: #b58900; color: #002b36; }
+    .btn-speed   { background: #268bd2; color: #fdf6e3; }
+    .btn-rain    { background: #6c71c4; color: #fdf6e3; }
+    .btn-boom    { background: #dc322f; color: #fdf6e3; font-size: 14px !important; }
+    .btn-exit    { background: #586e75; color: #fdf6e3; }
+    .btn-clear   { background: #cb4b16; color: #fdf6e3; }
 
-    .btn-speed.active { box-shadow: 0 0 0 3px #fff; }
+    .btn-speed.active { box-shadow: 0 0 0 2px #2aa198; }
 
-    /* === CONSOLA DE DEBUG === */
+    /* === CONSOLA Solarized === */
     #test-console {
-      display: none;
-      position: fixed;
-      bottom: 10px; right: 10px;
-      width: 460px; height: 280px;
-      background: rgba(0, 0, 0, 0.9);
-      border: 1px solid #444;
+      width: 480px; height: 260px;
+      background: #002b36;
+      border: 1px solid #073642;
       border-radius: 10px;
-      z-index: 100000;
-      pointer-events: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
       font-size: 12px;
       overflow: hidden;
@@ -201,13 +183,13 @@
 
     #test-console-header {
       padding: 6px 12px;
-      background: rgba(255,255,255,0.08);
-      color: #aaa;
+      background: #073642;
+      color: #93a1a1;
       font-size: 11px;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 1px;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid #586e75;
       display: flex;
       justify-content: space-between;
     }
@@ -221,50 +203,48 @@
     }
 
     #test-console-body::-webkit-scrollbar { width: 6px; }
-    #test-console-body::-webkit-scrollbar-track { background: transparent; }
-    #test-console-body::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    #test-console-body::-webkit-scrollbar-track { background: #002b36; }
+    #test-console-body::-webkit-scrollbar-thumb { background: #586e75; border-radius: 3px; }
 
     .log-line {
       padding: 2px 0;
       line-height: 1.5;
-      color: #ccc;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
+      color: #839496;
+      border-bottom: 1px solid #073642;
     }
-    .log-line .time { color: #666; }
-    .log-line .tag-lane { color: #4FC3F7; }
-    .log-line .tag-user { color: #81C784; }
-    .log-line .tag-sub { color: #FFD740; }
-    .log-line .tag-boom { color: #FF5252; }
-    .log-line .tag-speed { color: #64B5F6; }
-    .log-line .tag-rain { color: #CE93D8; }
-    .log-line .tag-info { color: #aaa; }
+    .log-line .time   { color: #586e75; }
+    .log-line .tag-lane  { color: #2aa198; }
+    .log-line .tag-user  { color: #859900; }
+    .log-line .tag-sub   { color: #b58900; }
+    .log-line .tag-boom  { color: #dc322f; }
+    .log-line .tag-speed { color: #268bd2; }
+    .log-line .tag-rain  { color: #6c71c4; }
+    .log-line .tag-info  { color: #657b83; }
   </style>
 </head>
 <body>
   <div id="status">CARGANDO...</div>
   <div id="container"></div>
 
-  <!-- TEST PANEL -->
-  <div id="test-panel">
+  <!-- TEST BAR: botones a la izquierda, consola a la derecha -->
+  <div id="test-bar">
     <div id="test-buttons">
       <button class="btn-user" onclick="testAddUser()">➕ Usuario</button>
-      <button class="btn-sub" onclick="testAddSub()">⭐ Subscriptor</button>
+      <button class="btn-sub" onclick="testAddSub()">⭐ Sub</button>
       <button class="btn-speed" id="btn-spd1" onclick="testSpeed(1)">🐢 Vel 1</button>
       <button class="btn-speed" id="btn-spd2" onclick="testSpeed(2)">🐇 Vel 2</button>
       <button class="btn-rain" onclick="toggleRain()">🌧️ Lluvia</button>
       <button class="btn-boom" onclick="triggerBoom()">💥 BOOM</button>
       <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info', 'Todos los dibujos eliminados')">🗑️ Limpiar</button>
-      <button class="btn-exit" onclick="toggleTest()">❌ Salir Test</button>
+      <button class="btn-exit" onclick="toggleTest()">❌ Salir</button>
     </div>
-  </div>
-
-  <!-- CONSOLA -->
-  <div id="test-console">
-    <div id="test-console-header">
-      <span>📟 Consola</span>
-      <span id="console-stats"></span>
+    <div id="test-console">
+      <div id="test-console-header">
+        <span>📟 Consola</span>
+        <span id="console-stats"></span>
+      </div>
+      <div id="test-console-body"></div>
     </div>
-    <div id="test-console-body"></div>
   </div>
 
   <script>
@@ -298,7 +278,6 @@
     let testUserCounter = 0;
     let boomTimer = null;
 
-    // === VELOCIDAD ===
     let globalSpeedMultiplier = 0.54; 
 
     const LANES = [10, 40, 70, 100]; 
@@ -307,7 +286,7 @@
 
     let lastTime = performance.now();
 
-    // === CONSOLA DE DEBUG ===
+    // === CONSOLA ===
     function logConsole(tag, message) {
       if (!testMode) return;
       const body = document.getElementById('test-console-body');
@@ -318,7 +297,6 @@
       line.innerHTML = `<span class="time">${timeStr}</span> <span class="tag-${tag}">[${tag.toUpperCase()}]</span> ${message}`;
       body.appendChild(line);
       body.scrollTop = body.scrollHeight;
-      // Mantener máximo 200 líneas
       while (body.children.length > 200) body.removeChild(body.firstChild);
       updateConsoleStats();
     }
@@ -326,12 +304,11 @@
     function updateConsoleStats() {
       const el = document.getElementById('console-stats');
       if (!el) return;
-      const laneCounts = [0,0,0,0];
-      drawings.forEach(d => { if (!d.el.classList.contains('showcase') && !d.el.classList.contains('hidden')) laneCounts[d.lane]++; });
-      el.textContent = `Dibujos: ${drawings.length} | C1:${laneCounts[0]} C2:${laneCounts[1]} C3:${laneCounts[2]} C4:${laneCounts[3]} | Vel: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`;
+      const lc = [0,0,0,0];
+      drawings.forEach(d => { if (!d.el.classList.contains('showcase') && !d.el.classList.contains('hidden')) lc[d.lane]++; });
+      el.textContent = `Total: ${drawings.length} | C1:${lc[0]} C2:${lc[1]} C3:${lc[2]} C4:${lc[3]} | Vel: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`;
     }
 
-    // Helper para calcular la X mínima real en un carril
     function getMinXInLane(laneIdx, excludeObj) {
       let minX = Infinity;
       drawings.forEach(d => {
@@ -340,6 +317,17 @@
         }
       });
       return minX === Infinity ? -200 : minX;
+    }
+
+    // Helper: dar velocidades de boom a un dibujo
+    function assignBoomPhysics(d) {
+      d.el.classList.remove('jumping');
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 5;
+      d.boomVx = Math.cos(angle) * speed;
+      d.boomVy = Math.sin(angle) * speed;
+      d.boomRot = 0;
+      d.boomRotSpeed = (Math.random() - 0.5) * 12;
     }
 
     // === LOOP PRINCIPAL ===
@@ -359,23 +347,23 @@
              continue;
         }
 
-        // === BOOM MODE ===
+        // === BOOM ===
         if (boomMode) {
             d.el.style.opacity = 1;
             d.x += d.boomVx * dt;
             d.y += d.boomVy * dt;
             d.boomRot += d.boomRotSpeed * dt;
 
-            // Rebote en bordes (ping pong)
-            if (d.x < -80) { d.x = -80; d.boomVx = Math.abs(d.boomVx); }
-            if (d.x > 1840) { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
-            if (d.y < -80) { d.y = -80; d.boomVy = Math.abs(d.boomVy); }
-            if (d.y > 980) { d.y = 980; d.boomVy = -Math.abs(d.boomVy); }
+            if (d.x < -80)   { d.x = -80;  d.boomVx = Math.abs(d.boomVx); }
+            if (d.x > 1840)  { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
+            if (d.y < -80)   { d.y = -80;  d.boomVy = Math.abs(d.boomVy); }
+            if (d.y > 980)   { d.y = 980;  d.boomVy = -Math.abs(d.boomVy); }
 
             d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0) rotate(${d.boomRot}deg)`;
             continue;
         }
         
+        // === RAIN ===
         if (rainMode) {
             d.el.style.opacity = 1; 
             d.y += (d.rainSpeed * dt); 
@@ -386,6 +374,7 @@
             continue; 
         }
 
+        // === DYING ===
         if (d.dying) {
             d.vy += 0.5 * dt; 
             d.y += d.vy * dt; 
@@ -394,14 +383,13 @@
             d.el.style.opacity = (1 - (d.y / 1500)); 
             if (d.y > 1200) { d.el.remove(); activeCodes.delete(d.code); drawings.splice(i, 1); continue; }
         } else {
+            // === NORMAL WALK ===
             d.el.style.opacity = 1;
             d.x += (d.speed * globalSpeedMultiplier) * dt;
             
             if (d.x > 2200) { 
               d.loops++; 
-              if (d.loops >= 1) {
-                  d.el.classList.remove('jumping');
-              }
+              if (d.loops >= 1) d.el.classList.remove('jumping');
 
               const oldLane = d.lane;
               const newLaneIdx = Math.floor(Math.random() * LANES.length);
@@ -420,7 +408,7 @@
     }
     requestAnimationFrame(animate);
 
-    // === TWITCH CONNECTION ===
+    // === TWITCH ===
     function connectTwitch() {
       if (ws) { try { ws.close(); } catch(e){} }
       const statusEl = document.getElementById('status');
@@ -440,7 +428,6 @@
       ws.onmessage = (e) => handleMessage(e.data);
     }
 
-    // === MANEJADOR DE MENSAJES ===
     function handleMessage(data) {
       if (data.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); return; }
       if (data.indexOf('PRIVMSG') !== -1) {
@@ -481,14 +468,11 @@
       }
     }
 
-    // === FUNCIONES DE BORRADO ===
+    // === BORRADO ===
     function removeLastDrawing(targetUser) {
       for (let i = drawings.length - 1; i >= 0; i--) {
         if (drawings[i].user === targetUser) {
-          drawings[i].el.remove();
-          activeCodes.delete(drawings[i].code);
-          drawings.splice(i, 1);
-          return; 
+          drawings[i].el.remove(); activeCodes.delete(drawings[i].code); drawings.splice(i, 1); return; 
         }
       }
     }
@@ -502,13 +486,10 @@
 
     function removeAllDrawingsGlobal() {
        drawings.forEach(d => d.el.remove());
-       drawings = [];
-       activeCodes.clear();
-       subQueue = [];
-       isShowcaseBusy = false;
+       drawings = []; activeCodes.clear(); subQueue = []; isShowcaseBusy = false;
     }
 
-    // === CREACIÓN DE DIBUJOS ===
+    // === CREAR DIBUJO ===
     function createDrawing(user, fullCode, isSub, isTest, forceX) {
       if (fullCode) fullCode = fullCode.replace(/=+$/, '');
       if (!isTest && activeCodes.has(fullCode)) return;
@@ -561,13 +542,7 @@
             itemEl.classList.add('is-sub');
             if (!isTest) itemEl.classList.add('waiting');
         }
-        if (!isTest && !isSub) {
-            itemEl.classList.add('jumping');
-        }
-        // En test, los no-sub también saltan en su primer loop
-        if (isTest && !isSub) {
-            itemEl.classList.add('jumping');
-        }
+        if (!isSub) itemEl.classList.add('jumping');
 
         if (testMode && !isTest) itemEl.classList.add('hidden');
         itemEl.appendChild(canvas);
@@ -612,6 +587,19 @@
 
         setTimeout(() => {
           current.el.classList.remove('showcase');
+
+          // FIX: Si boom está activo, saltar la espiral y mandar directo a volar
+          if (boomMode) {
+            current.el.style.transform = '';
+            current.x = 960;
+            current.y = 540;
+            assignBoomPhysics(current);
+            logConsole('boom', `💥 <b>${current.user}</b> sale del showcase directo al BOOM`);
+            isShowcaseBusy = false;
+            processQueue();
+            return;
+          }
+
           current.el.classList.add('spiral-to-lane');
           logConsole('sub', `🌀 <b>${current.user}</b> espiral → carril ${current.lane + 1}`);
 
@@ -642,10 +630,18 @@
               current.el.style.transform = '';
               current.x = targetX;
               current.y = targetY;
-              current.el.classList.add('jumping');
-              current.loops = 0;
+
+              // FIX: Si boom se activó DURANTE la espiral, mandar a volar
+              if (boomMode) {
+                assignBoomPhysics(current);
+                logConsole('boom', `💥 <b>${current.user}</b> terminó espiral, se une al BOOM`);
+              } else {
+                current.el.classList.add('jumping');
+                current.loops = 0;
+                logConsole('sub', `✅ <b>${current.user}</b> aterrizó en carril ${current.lane + 1}, caminando`);
+              }
+              
               isShowcaseBusy = false;
-              logConsole('sub', `✅ <b>${current.user}</b> aterrizó en carril ${current.lane + 1}, caminando`);
               processQueue();
             }
           }
@@ -654,33 +650,24 @@
       }
     }
 
-    // === BOOM MODE ===
+    // === BOOM ===
     function triggerBoom() {
-      if (boomMode) return; // ya está activo
+      if (boomMode) return;
       if (drawings.length === 0) { logConsole('boom', 'No hay dibujos para explotar'); return; }
       
       boomMode = true;
       rainMode = false;
       logConsole('boom', `💥💥💥 BOOM ACTIVADO — ${drawings.length} dibujos rebotando por 25s`);
 
-      // Asignar velocidades y dirección aleatoria a cada dibujo
       drawings.forEach(d => {
-        if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting')) return;
-        d.el.classList.remove('jumping');
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 3 + Math.random() * 5; // velocidad no tan rápida pero loca
-        d.boomVx = Math.cos(angle) * speed;
-        d.boomVy = Math.sin(angle) * speed;
-        d.boomRot = 0;
-        d.boomRotSpeed = (Math.random() - 0.5) * 12; // giro aleatorio
+        if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting') || d.el.classList.contains('spiral-to-lane')) return;
+        assignBoomPhysics(d);
       });
 
-      // Después de 25s, volver a carriles normales
       if (boomTimer) clearTimeout(boomTimer);
       boomTimer = setTimeout(() => {
         boomMode = false;
         logConsole('boom', '💥 BOOM terminado — volviendo a carriles');
-        // Reasignar cada dibujo a un carril
         drawings.forEach((d, idx) => {
           if (d.el.classList.contains('showcase') || d.el.classList.contains('waiting')) return;
           const laneIdx = idx % LANES.length;
@@ -694,7 +681,7 @@
       }, 25000);
     }
 
-    // === TEST PANEL FUNCTIONS ===
+    // === TEST PANEL ===
     function testAddUser() {
       testUserCounter++;
       const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + '_' + testUserCounter;
@@ -708,8 +695,8 @@
     }
 
     function testSpeed(level) {
-      if (level === 1) { globalSpeedMultiplier = 0.54; }
-      else if (level === 2) { globalSpeedMultiplier = 1.0; }
+      if (level === 1) globalSpeedMultiplier = 0.54;
+      else if (level === 2) globalSpeedMultiplier = 1.0;
       document.getElementById('btn-spd1').classList.toggle('active', level === 1);
       document.getElementById('btn-spd2').classList.toggle('active', level === 2);
       logConsole('speed', `Velocidad → ${level} (${level === 1 ? 'lenta' : 'rápida'})`);
@@ -720,26 +707,20 @@
 
     function toggleTest() {
       testMode = !testMode;
-      const panel = document.getElementById('test-panel');
-      const consolEl = document.getElementById('test-console');
+      const bar = document.getElementById('test-bar');
 
       if (testMode) {
-        // Ocultar dibujos reales
         drawings.forEach(d => { if(!d.isTest) d.el.classList.add('hidden'); });
         
-        // Mostrar panel y consola
-        panel.style.display = 'block';
-        consolEl.style.display = 'flex';
+        bar.style.display = 'flex';
         document.getElementById('test-console-body').innerHTML = '';
 
-        // Highlight velocidad actual
         document.getElementById('btn-spd1').classList.toggle('active', globalSpeedMultiplier < 0.9);
         document.getElementById('btn-spd2').classList.toggle('active', globalSpeedMultiplier >= 0.9);
 
         logConsole('info', '🧪 Modo test ACTIVADO');
         logConsole('info', `Carriles: ${LANES.length} | Velocidad: ${globalSpeedMultiplier >= 0.9 ? '2' : '1'}`);
 
-        // Spawnear bots iniciales escalonados
         let botIndex = 0;
         const totalBots = 8;
         testSpawnTimer = setInterval(() => {
@@ -757,10 +738,8 @@
         boomMode = false;
         rainMode = false;
         
-        panel.style.display = 'none';
-        consolEl.style.display = 'none';
+        bar.style.display = 'none';
 
-        // Limpiar test drawings, restaurar reales
         drawings = drawings.filter(d => {
           if(d.isTest) { d.el.remove(); return false; }
           d.el.classList.remove('hidden'); return true;
