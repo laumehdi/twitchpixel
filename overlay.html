@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V19 - Admin Wipe User</title>
+  <title>Overlay Alpha Gold V20 - Bugfix</title>
   <style>
     html, body { 
       margin: 0; padding: 0; 
@@ -42,7 +42,7 @@
       image-rendering: pixelated; 
       width: 165px; height: 165px; 
       background: transparent; 
-      transition: transform 0.3s; 
+      /* FIX: Removida transition innecesaria que no hacía nada útil */
       z-index: 2; 
     }
 
@@ -157,10 +157,22 @@
 
     let lastTime = performance.now();
 
+    // FIX: Helper para calcular la X mínima real en un carril
+    function getMinXInLane(laneIdx, excludeObj) {
+      let minX = Infinity;
+      drawings.forEach(d => {
+        if (d !== excludeObj && d.lane === laneIdx && !d.el.classList.contains('showcase')) {
+          if (d.x < minX) minX = d.x;
+        }
+      });
+      return minX === Infinity ? -200 : minX;
+    }
+
     function animate(currentTime) {
       if (!currentTime) currentTime = performance.now();
       
-      const dt = (currentTime - lastTime) / 16.666;
+      // FIX: Clampear dt para evitar saltos enormes al perder/recuperar foco
+      const dt = Math.min((currentTime - lastTime) / 16.666, 3);
       lastTime = currentTime;
       const now = Date.now(); 
 
@@ -206,11 +218,8 @@
               d.speed = SPEEDS[newLaneIdx];
               d.el.style.zIndex = Z_INDEXES[newLaneIdx];
 
-              let minX = -200;
-              drawings.forEach(other => { 
-                  if (other.lane === d.lane && other.x < minX) minX = other.x; 
-              });
-              d.x = minX - 350; 
+              // FIX: Usar helper que calcula la X mínima real
+              d.x = getMinXInLane(newLaneIdx, d) - 350;
             }
             d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
         }
@@ -234,12 +243,15 @@
         ws.send('JOIN #' + CHANNEL.toLowerCase());
       };
       ws.onclose = () => { statusEl.innerText = "DESCONECTADO"; statusEl.style.display = 'block'; setTimeout(connectTwitch, 3000); };
+      // FIX: Agregar handler de error para el WebSocket
+      ws.onerror = (e) => { console.error('WebSocket error:', e); };
       ws.onmessage = (e) => handleMessage(e.data);
     }
 
     // === MANEJADOR DE MENSAJES ===
     function handleMessage(data) {
-      if (data.indexOf('PING') !== -1) { ws.send('PONG :tmi.twitch.tv'); return; }
+      // FIX: Verificar que el mensaje EMPIECE con PING, no que simplemente lo contenga
+      if (data.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); return; }
       if (data.indexOf('PRIVMSG') !== -1) {
         const parts = data.split('PRIVMSG #' + CHANNEL.toLowerCase() + ' :');
         if (!parts[1]) return;
@@ -248,7 +260,8 @@
         const rawTags = data.split('PRIVMSG')[0];
         const userMatch = data.match(/:(\w+)!/);
         const user = userMatch ? userMatch[1].toLowerCase() : 'unknown';
-        const isSub = rawTags.indexOf('subscriber=1') !== -1 || rawTags.indexOf('badges=subscriber') !== -1 || rawTags.indexOf('/founder') !== -1;
+        // FIX: Detección de suscriptor más robusta con regex
+        const isSub = /subscriber=1/.test(rawTags) || /badges=[^;]*(?:subscriber|founder)/.test(rawTags);
         const isAdmin = (user === CHANNEL.toLowerCase());
 
         const args = msg.split(' ');
@@ -337,6 +350,8 @@
         if (isV2) {
           const cleanCode = fullCode.substring(2);
           const [headerHex, payload] = cleanCode.split('_');
+          // FIX: Validar que exista el payload antes de procesarlo
+          if (!headerHex || !payload) return;
           finalPalette.push('transparent'); 
           for (let i = 0; i < headerHex.length; i += 6) finalPalette.push('#' + headerHex.substring(i, i+6));
           const binaryString = atob(payload);
@@ -346,8 +361,12 @@
           }
         } else {
           const [header, payload] = fullCode.split('_');
-          for (let i = 0; i < payload.length; i += 2) {
+          // FIX: Validar que existan header y payload, y que payload tenga largo par
+          if (!header || !payload) return;
+          const safePayloadLen = payload.length - (payload.length % 2); // asegurar largo par
+          for (let i = 0; i < safePayloadLen; i += 2) {
             const colorIdx = parseInt(payload[i], 16), count = parseInt(payload[i+1], 36);
+            if (isNaN(colorIdx) || isNaN(count) || count > 256) continue; // FIX: Validar valores
             for (let j = 0; j < count; j++) pixelData.push(colorIdx);
           }
           for(let i=0; i < header.length; i++) {
@@ -355,6 +374,9 @@
             else { finalPalette.push(colors[parseInt(header[i], 16)]); }
           }
         }
+
+        // FIX: Validar que se haya generado algo antes de crear el DOM
+        if (pixelData.length === 0 || finalPalette.length === 0) return;
 
         const itemEl = document.createElement('div');
         itemEl.className = 'item';
@@ -404,9 +426,8 @@
         };
 
         if (forceX === undefined) {
-          let min = -200;
-          drawings.forEach(d => { if(d.lane === laneIdx && d.x < min) min = d.x; });
-          obj.x = min - 350;
+          // FIX: Usar helper para calcular X mínima real
+          obj.x = getMinXInLane(laneIdx, null) - 350;
         }
         obj.rainOriginX = obj.x;
         drawings.push(obj);
@@ -425,9 +446,8 @@
         current.el.classList.add('showcase');
         setTimeout(() => {
           current.el.classList.remove('showcase');
-          let min = -200;
-          drawings.forEach(d => { if(d.lane === current.lane && d.x < min) min = d.x; });
-          current.x = min - 350;
+          // FIX: Usar helper para calcular X mínima real
+          current.x = getMinXInLane(current.lane, current) - 350;
           current.el.classList.add('jumping');
           current.loops = 0; 
           isShowcaseBusy = false;
