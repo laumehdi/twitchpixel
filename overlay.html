@@ -386,12 +386,27 @@
               const bob = Math.sin(now / 600 + d.fightPhase) * 4;
               d.el.style.transform = `translate3d(${d.x}px,${d.y + bob}px,0)`;
             } else if (fs.phase === 'fighting') {
-              // Charge toward center and chaotic movement
-              const centerX = 880;
-              d.x += (centerX - d.x) * 0.02 * dt + (Math.random() - 0.5) * 8 * dt;
-              d.y += (Math.random() - 0.5) * 6 * dt;
-              // Keep in bounds
-              if (d.y < 100) d.y = 100; if (d.y > 900) d.y = 900;
+              // Each fighter has their own orbit target that shifts over time
+              // Left team fights on the left-center, right team on the right-center
+              const baseX = d.fightSide === 'left' ? 700 : 1100;
+              const orbitX = baseX + Math.sin(now / 800 + d.fightPhase * 3) * 200;
+              const orbitY = d.fightSlotY + Math.cos(now / 600 + d.fightPhase * 2) * 80;
+              
+              // Charge toward their orbit point with some chaos
+              d.x += (orbitX - d.x) * 0.03 * dt + Math.sin(now/200 + d.fightPhase) * 3 * dt;
+              d.y += (orbitY - d.y) * 0.03 * dt + Math.cos(now/250 + d.fightPhase) * 2 * dt;
+              
+              // Occasional lunge toward the enemy side
+              const lunge = Math.sin(now / 400 + d.fightPhase * 5);
+              if (lunge > 0.7) {
+                const enemyDir = d.fightSide === 'left' ? 1 : -1;
+                d.x += enemyDir * 4 * dt;
+              }
+              
+              // Keep in bounds with margin
+              if (d.x < 300) d.x = 300; if (d.x > 1600) d.x = 1600;
+              if (d.y < 120) d.y = 120; if (d.y > 880) d.y = 880;
+              
               const shake = Math.sin(now / 50 + d.fightPhase) * 3;
               d.el.style.transform = `translate3d(${d.x}px,${d.y + shake}px,0)`;
             } else if (fs.phase === 'victory') {
