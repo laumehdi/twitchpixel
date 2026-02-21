@@ -115,8 +115,38 @@
     }
 
     /* ============================================
-       TEST PANEL - Solarized Dark
+       TEST PANEL - Solarized Light (default)
+       Dark mode auto-detected via prefers-color-scheme
        ============================================ */
+
+    /* --- Solarized CSS Variables --- */
+    :root {
+      --sol-bg:       #fdf6e3;
+      --sol-bg-alt:   #eee8d5;
+      --sol-border:   #93a1a1;
+      --sol-text:     #657b83;
+      --sol-text-dim: #93a1a1;
+      --sol-text-emph:#586e75;
+      --sol-shadow:   rgba(0,0,0,0.12);
+      --sol-scrollbar: #93a1a1;
+      --sol-line-border: #eee8d5;
+      /* accent colors are the same in both themes */
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --sol-bg:       #002b36;
+        --sol-bg-alt:   #073642;
+        --sol-border:   #073642;
+        --sol-text:     #839496;
+        --sol-text-dim: #586e75;
+        --sol-text-emph:#93a1a1;
+        --sol-shadow:   rgba(0,0,0,0.5);
+        --sol-scrollbar: #586e75;
+        --sol-line-border: #073642;
+      }
+    }
+
     #test-bar {
       display: none;
       position: fixed;
@@ -124,7 +154,6 @@
       z-index: 100000;
       pointer-events: auto;
       font-family: 'Segoe UI', sans-serif;
-      display: none;
       flex-direction: row;
       align-items: flex-end;
       gap: 10px;
@@ -136,10 +165,10 @@
       flex-wrap: wrap;
       max-width: 340px;
       padding: 10px;
-      background: #002b36;
+      background: var(--sol-bg);
       border-radius: 10px;
-      border: 1px solid #073642;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      border: 1px solid var(--sol-border);
+      box-shadow: 0 4px 20px var(--sol-shadow);
     }
 
     #test-buttons button {
@@ -157,8 +186,8 @@
     #test-buttons button:hover { transform: scale(1.05); filter: brightness(1.15); }
     #test-buttons button:active { transform: scale(0.97); }
 
-    .btn-user    { background: #859900; color: #002b36; }
-    .btn-sub     { background: #b58900; color: #002b36; }
+    .btn-user    { background: #859900; color: #fdf6e3; }
+    .btn-sub     { background: #b58900; color: #fdf6e3; }
     .btn-speed   { background: #268bd2; color: #fdf6e3; }
     .btn-rain    { background: #6c71c4; color: #fdf6e3; }
     .btn-boom    { background: #dc322f; color: #fdf6e3; font-size: 14px !important; }
@@ -170,10 +199,10 @@
     /* === CONSOLA Solarized === */
     #test-console {
       width: 480px; height: 260px;
-      background: #002b36;
-      border: 1px solid #073642;
+      background: var(--sol-bg);
+      border: 1px solid var(--sol-border);
       border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 20px var(--sol-shadow);
       font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
       font-size: 12px;
       overflow: hidden;
@@ -183,13 +212,13 @@
 
     #test-console-header {
       padding: 6px 12px;
-      background: #073642;
-      color: #93a1a1;
+      background: var(--sol-bg-alt);
+      color: var(--sol-text-emph);
       font-size: 11px;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 1px;
-      border-bottom: 1px solid #586e75;
+      border-bottom: 1px solid var(--sol-border);
       display: flex;
       justify-content: space-between;
     }
@@ -203,23 +232,23 @@
     }
 
     #test-console-body::-webkit-scrollbar { width: 6px; }
-    #test-console-body::-webkit-scrollbar-track { background: #002b36; }
-    #test-console-body::-webkit-scrollbar-thumb { background: #586e75; border-radius: 3px; }
+    #test-console-body::-webkit-scrollbar-track { background: var(--sol-bg); }
+    #test-console-body::-webkit-scrollbar-thumb { background: var(--sol-scrollbar); border-radius: 3px; }
 
     .log-line {
       padding: 2px 0;
       line-height: 1.5;
-      color: #839496;
-      border-bottom: 1px solid #073642;
+      color: var(--sol-text);
+      border-bottom: 1px solid var(--sol-line-border);
     }
-    .log-line .time   { color: #586e75; }
+    .log-line .time   { color: var(--sol-text-dim); }
     .log-line .tag-lane  { color: #2aa198; }
     .log-line .tag-user  { color: #859900; }
     .log-line .tag-sub   { color: #b58900; }
     .log-line .tag-boom  { color: #dc322f; }
     .log-line .tag-speed { color: #268bd2; }
     .log-line .tag-rain  { color: #6c71c4; }
-    .log-line .tag-info  { color: #657b83; }
+    .log-line .tag-info  { color: var(--sol-text-dim); }
   </style>
 </head>
 <body>
