@@ -395,11 +395,11 @@
         // === POGO ===
         if (activeEvent === 'pogo') {
           d.el.style.opacity = 1;
-          d.boomVy += 0.6 * dt; // gravity
+          d.boomVy += 0.35 * dt; // gravity (lower = longer airtime)
           d.y += d.boomVy * dt;
           d.x += d.boomVx * dt;
-          // bounce off floor
-          if (d.y > 820) { d.y = 820; d.boomVy = -(4 + Math.random() * 6); }
+          // bounce off floor — BIG launch upward
+          if (d.y > 820) { d.y = 820; d.boomVy = -(12 + Math.random() * 10); }
           // bounce off walls
           if (d.x < -80) { d.x = -80; d.boomVx = Math.abs(d.boomVx); }
           if (d.x > 1840) { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
@@ -675,10 +675,10 @@
       drawings.forEach(d => {
         if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
         d.el.classList.remove('jumping');
-        d.boomVx = (Math.random()-0.5) * 6;
-        d.boomVy = -(4 + Math.random()*8); // initial upward launch
+        d.boomVx = (Math.random()-0.5) * 8;
+        d.boomVy = -(14 + Math.random()*10); // big initial launch upward
         d.boomRot = 0;
-        d.boomRotSpeed = (Math.random()-0.5)*8;
+        d.boomRotSpeed = (Math.random()-0.5)*10;
       });
       eventTimer = setTimeout(endEvent, 30000);
     }
