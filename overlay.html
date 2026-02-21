@@ -324,6 +324,43 @@
 
     function isEventActive() { return activeEvent !== null; }
 
+    // === EXPLOSION PARTICLES ===
+    function spawnExplosion(x, y) {
+      const particleCount = 12;
+      const container = document.getElementById('container');
+      for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('div');
+        const size = 6 + Math.random() * 10;
+        const angle = (Math.PI * 2 / particleCount) * i + (Math.random() - 0.5) * 0.5;
+        const speed = 80 + Math.random() * 120;
+        const dx = Math.cos(angle) * speed;
+        const dy = Math.sin(angle) * speed;
+        const colors = ['#dc322f','#cb4b16','#b58900','#ffff55','#ff5555','#ffffff'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        p.style.cssText = `position:absolute;left:${x + 80}px;top:${y + 80}px;width:${size}px;height:${size}px;background:${color};border-radius:50%;pointer-events:none;z-index:99990;box-shadow:0 0 ${size}px ${color};`;
+        container.appendChild(p);
+        
+        const startTime = performance.now();
+        const duration = 400 + Math.random() * 300;
+        
+        function animParticle(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const ease = 1 - Math.pow(1 - progress, 2);
+          const px = x + 80 + dx * ease;
+          const py = y + 80 + dy * ease - 30 * ease; // slight upward arc
+          const scale = 1 - progress * 0.7;
+          const opacity = 1 - progress;
+          p.style.transform = `translate(${dx * ease}px, ${dy * ease - 40 * ease}px) scale(${scale})`;
+          p.style.opacity = opacity;
+          if (progress < 1) requestAnimationFrame(animParticle);
+          else p.remove();
+        }
+        requestAnimationFrame(animParticle);
+      }
+    }
+
     // ==============================================================
     //  MAIN ANIMATION LOOP
     // ==============================================================
@@ -661,10 +698,12 @@
       const leftTeam = shuffled.slice(0, half);
       const rightTeam = shuffled.slice(half);
 
-      // Assign positions
+      // Assign individual HP + positions
       leftTeam.forEach((d, i) => {
         d.fightSide = 'left'; d.fightDead = false;
         d.el.classList.remove('jumping');
+        d.fightHP = 2 + Math.floor(Math.random() * 4); // 2-5 HP each
+        d.fightMaxHP = d.fightHP;
         d.fightSlotX = 80 + (i % 3) * 120;
         d.fightSlotY = 150 + Math.floor(i / 3) * 180 + (i%2)*30;
         d.fightPhase = Math.random()*7;
@@ -672,17 +711,29 @@
       rightTeam.forEach((d, i) => {
         d.fightSide = 'right'; d.fightDead = false;
         d.el.classList.remove('jumping');
+        d.fightHP = 2 + Math.floor(Math.random() * 4); // 2-5 HP each
+        d.fightMaxHP = d.fightHP;
         d.fightSlotX = 1550 + (i % 3) * 120;
         d.fightSlotY = 150 + Math.floor(i / 3) * 180 + (i%2)*30;
         d.fightPhase = Math.random()*7;
       });
 
+      // Total team HP = sum of individual HPs
+      const leftTotalHP = leftTeam.reduce((s,d) => s + d.fightHP, 0);
+      const rightTotalHP = rightTeam.reduce((s,d) => s + d.fightHP, 0);
+
+      // Kill interval scales with fighter count: more fighters = faster hits
+      // Base interval ~1.5s, scales down with more fighters, min 0.6s
+      const totalFighters = eligible.length;
+      const baseInterval = Math.max(600, 1500 - totalFighters * 50);
+
       fightState = {
-        phase: 'lineup', // lineup -> fight-text -> fighting -> victory
+        phase: 'lineup',
         leftTeam, rightTeam,
-        leftHP: leftTeam.length, rightHP: rightTeam.length,
-        leftMax: leftTeam.length, rightMax: rightTeam.length,
-        fightStartTime: 0, nextKillTime: 0, fightDuration: 25000
+        leftTotalHP: leftTotalHP, rightTotalHP: rightTotalHP,
+        leftMaxHP: leftTotalHP, rightMaxHP: rightTotalHP,
+        nextHitTime: 0,
+        baseInterval: baseInterval
       };
 
       // Show HUD
@@ -695,8 +746,8 @@
       document.getElementById('fight-text').style.display = 'none';
       document.getElementById('fight-winner-text').style.display = 'none';
 
-      logConsole('fight', `Equipo 🔴: ${leftTeam.map(d=>d.user).join(', ')}`);
-      logConsole('fight', `Equipo 🔵: ${rightTeam.map(d=>d.user).join(', ')}`);
+      logConsole('fight', `Equipo 🔴 (${leftTeam.length}, HP total: ${leftTotalHP}): ${leftTeam.map(d=>d.user+'['+d.fightHP+'hp]').join(', ')}`);
+      logConsole('fight', `Equipo 🔵 (${rightTeam.length}, HP total: ${rightTotalHP}): ${rightTeam.map(d=>d.user+'['+d.fightHP+'hp]').join(', ')}`);
 
       // After 8s lineup, show FIGHT!, then start fighting
       setTimeout(() => {
@@ -708,14 +759,8 @@
           ft.style.display = 'none';
           if (activeEvent !== 'fight' || !fightState) return;
           fightState.phase = 'fighting';
-          fightState.fightStartTime = Date.now();
-          fightState.nextKillTime = Date.now() + 1500 + Math.random()*2000;
-
-          // End fight after fightDuration
-          eventTimer = setTimeout(() => {
-            if (activeEvent === 'fight' && fightState) finishFight();
-          }, fightState.fightDuration);
-        }, 2000); // FIGHT! text visible for 2s
+          fightState.nextHitTime = Date.now() + 1000 + Math.random() * fightState.baseInterval;
+        }, 2000);
       }, 8000);
     }
 
@@ -723,31 +768,58 @@
       if (!fightState || fightState.phase !== 'fighting') return;
       const now = Date.now();
       
-      if (now >= fightState.nextKillTime && fightState.leftHP > 0 && fightState.rightHP > 0) {
-        // Pick a side to lose one member
-        const side = Math.random() < 0.5 ? 'left' : 'right';
-        const team = side === 'left' ? fightState.leftTeam : fightState.rightTeam;
-        const alive = team.filter(d => !d.fightDead);
-        if (alive.length > 0) {
-          const victim = alive[Math.floor(Math.random()*alive.length)];
-          victim.fightDead = true;
-          victim.el.style.opacity = 0;
-          if (side === 'left') fightState.leftHP--;
-          else fightState.rightHP--;
+      if (now >= fightState.nextHitTime) {
+        const leftAlive = fightState.leftTeam.filter(d => !d.fightDead);
+        const rightAlive = fightState.rightTeam.filter(d => !d.fightDead);
+        if (leftAlive.length === 0 || rightAlive.length === 0) { finishFight(); return; }
 
-          // Update HP bars
-          document.getElementById('hp-left').style.width = (fightState.leftHP/fightState.leftMax*100)+'%';
-          document.getElementById('hp-right').style.width = (fightState.rightHP/fightState.rightMax*100)+'%';
-          
-          logConsole('fight', `💀 <b>${victim.user}</b> (${side==='left'?'🔴':'🔵'}) eliminado! [${fightState.leftHP} vs ${fightState.rightHP}]`);
+        // Pick attacker side randomly, the other side takes damage
+        const attackSide = Math.random() < 0.5 ? 'left' : 'right';
+        const defenders = attackSide === 'left' ? rightAlive : leftAlive;
+        
+        // Pick a random defender to take a hit
+        const target = defenders[Math.floor(Math.random() * defenders.length)];
+        target.fightHP--;
 
-          // Check if one side is wiped
-          if (fightState.leftHP <= 0 || fightState.rightHP <= 0) {
+        // Flash the hit target briefly
+        target.el.style.filter = 'brightness(3)';
+        setTimeout(() => { if (!target.fightDead) target.el.style.filter = ''; }, 150);
+
+        // Update team total HP
+        if (attackSide === 'left') fightState.rightTotalHP--;
+        else fightState.leftTotalHP--;
+
+        // Update HP bars
+        document.getElementById('hp-left').style.width = Math.max(0, fightState.leftTotalHP / fightState.leftMaxHP * 100) + '%';
+        document.getElementById('hp-right').style.width = Math.max(0, fightState.rightTotalHP / fightState.rightMaxHP * 100) + '%';
+
+        // Did the target die?
+        if (target.fightHP <= 0) {
+          target.fightDead = true;
+          spawnExplosion(target.x, target.y);
+          target.el.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+          target.el.style.transform += ' scale(1.5)';
+          target.el.style.opacity = 0;
+          target.el.style.filter = '';
+          setTimeout(() => { target.el.style.transition = ''; }, 350);
+
+          const defSide = attackSide === 'left' ? '🔵' : '🔴';
+          logConsole('fight', `💀 <b>${target.user}</b> (${defSide}) MUERTO! [🔴 ${fightState.leftTeam.filter(d=>!d.fightDead).length} vs ${fightState.rightTeam.filter(d=>!d.fightDead).length} 🔵]`);
+
+          // Check if a full team is wiped
+          const leftRemain = fightState.leftTeam.filter(d => !d.fightDead).length;
+          const rightRemain = fightState.rightTeam.filter(d => !d.fightDead).length;
+          if (leftRemain === 0 || rightRemain === 0) {
             finishFight();
             return;
           }
+        } else {
+          const defSide = attackSide === 'left' ? '🔵' : '🔴';
+          logConsole('fight', `⚔️ <b>${target.user}</b> (${defSide}) recibe golpe! HP: ${target.fightHP}/${target.fightMaxHP}`);
         }
-        fightState.nextKillTime = now + 1000 + Math.random()*2500;
+
+        // Next hit: random interval around baseInterval
+        fightState.nextHitTime = now + fightState.baseInterval * (0.5 + Math.random());
       }
     }
 
@@ -756,9 +828,10 @@
       if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
       fightState.phase = 'victory';
 
-      const winningSide = fightState.leftHP > 0 ? 'left' : (fightState.rightHP > 0 ? 'right' : 'left');
-      const winTeam = winningSide === 'left' ? fightState.leftTeam : fightState.rightTeam;
-      const winners = winTeam.filter(d => !d.fightDead);
+      const leftRemain = fightState.leftTeam.filter(d => !d.fightDead);
+      const rightRemain = fightState.rightTeam.filter(d => !d.fightDead);
+      const winningSide = leftRemain.length > 0 ? 'left' : 'right';
+      const winners = winningSide === 'left' ? leftRemain : rightRemain;
       const sideEmoji = winningSide === 'left' ? '🔴' : '🔵';
       const sideName = winningSide === 'left' ? 'ROJO' : 'AZUL';
 
