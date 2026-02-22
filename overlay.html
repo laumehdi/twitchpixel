@@ -873,6 +873,7 @@
     function triggerFight() {
       if (activeEvent === 'fight') { endEvent(); return; }
       if (isEventActive()) endEvent();
+      forceAllSubsToEvent(); // <-- AGREGADO ACÁ
       const eligible = drawings.filter(d => !d.el.classList.contains('showcase')&&!d.el.classList.contains('waiting')&&!d.el.classList.contains('spiral-to-lane'));
       if (eligible.length < 4) { logConsole('fight','Necesitás al menos 4 dibujos'); return; }
       
