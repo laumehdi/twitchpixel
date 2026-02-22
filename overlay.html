@@ -554,7 +554,7 @@
           const oldLane = d.lane;
           const nl = Math.floor(Math.random()*LANES.length);
           d.lane=nl; d.y=LANES[nl]; d.speed=SPEEDS[nl]; d.el.style.zIndex=Z_INDEXES[nl];
-          d.x = getMinXInLane(nl, d) - 350;
+          d.x = Math.min(-200, getMinXInLane(nl, d) - 350);
           logConsole('lane', `<b>${d.user}</b> loop #${d.loops} → carril ${nl+1} ${oldLane!==nl?'(cambió)':'(mismo)'}`);
         }
         d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0)`;
@@ -670,7 +670,7 @@
         document.getElementById('container').appendChild(itemEl);
 
         let obj={el:itemEl,user,code:fullCode,lane:laneIdx,speed:SPEEDS[laneIdx],y:LANES[laneIdx],x:forceX||-400,isTest,dying:false,vy:0,rot:0,rainOriginX:0,rainSpeed:1,rainPhase:0,loops:0,boomVx:0,boomVy:0,boomRot:0,boomRotSpeed:0,fightSide:null,fightSlotX:0,fightSlotY:0,fightPhase:Math.random()*7,fightDead:false};
-        if(forceX===undefined) obj.x=getMinXInLane(laneIdx,null)-350;
+        if(forceX===undefined) obj.x=Math.min(-200, getMinXInLane(laneIdx,null)-350);
         obj.rainOriginX=obj.x;
         drawings.push(obj);
         if(!isTest) activeCodes.add(fullCode);
