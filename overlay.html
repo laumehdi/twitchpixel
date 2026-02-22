@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V24</title>
+  <title>Overlay Alpha Gold V25</title>
   <style>
     /* === Solarized Palette Reference ===
        base03:#002b36 base02:#073642 base01:#586e75 base00:#657b83
@@ -36,6 +36,18 @@
     @keyframes jumpBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-30px)} }
     .jumping canvas { animation: jumpBounce 0.8s ease-in-out infinite; }
     .is-sub canvas { filter: brightness(1.15); }
+
+    @keyframes userDance {
+      0%{transform:rotate(0deg) scale(1)} 
+      15%{transform:rotate(12deg) scale(1.15)} 
+      30%{transform:rotate(-12deg) scale(1.15)} 
+      45%{transform:rotate(8deg) scale(1.05) translateY(-15px)} 
+      60%{transform:rotate(-8deg) scale(1.1)} 
+      75%{transform:rotate(5deg) scale(1.15) translateY(-10px)} 
+      100%{transform:rotate(0deg) scale(1)}
+    }
+    .user-dancing canvas { animation: userDance 0.7s ease-in-out infinite !important; filter: brightness(1.2) !important; }
+    .user-dancing .nick { color: #FFD700 !important; }
     
     .nick { 
       color: white; font-weight: 900; font-size: 22px; width: 280px; 
@@ -160,6 +172,7 @@
     .btn-volcano { background:#b58900; color:#fdf6e3; }
     .btn-confetti { background:#2aa198; color:#fdf6e3; }
     .btn-tornado { background:#6c71c4; color:#fdf6e3; }
+    .btn-dance { background:#d33682; color:#fdf6e3; }
     .btn-exit  { background:#586e75; color:#fdf6e3; }
     .btn-clear { background:#073642; color:#93a1a1; }
     .btn-speed.active { box-shadow: 0 0 0 2px #2aa198; }
@@ -196,6 +209,8 @@
     .log-line .tag-speed { color:#268bd2; }
     .log-line .tag-rain  { color:#6c71c4; }
     .log-line .tag-event { color:#2aa198; }
+    .log-line .tag-pubsub { color:#d33682; }
+    .log-line .tag-user { color:#b58900; }
     .log-line .tag-info  { color:var(--sol-text-dim); }
   </style>
 </head>
@@ -227,6 +242,7 @@
       <button class="btn-volcano" onclick="triggerVolcano()">🌋 Volcán</button>
       <button class="btn-confetti" onclick="triggerConfetti()">🎊 Salto</button>
       <button class="btn-tornado" onclick="triggerTornado()">🌪️ Tornado</button>
+      <button class="btn-dance" onclick="testDance()">💃 Bailar</button>
       <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info','Limpiado')">🗑️</button>
       <button class="btn-exit" onclick="toggleTest()">❌ Salir</button>
     </div>
@@ -244,6 +260,8 @@
     let channelParam = urlParams.get('channel');
     if (!channelParam && window.location.search.length > 1) channelParam = window.location.search.substring(1).replace('=', '');
     const CHANNEL = channelParam || 'laumehdi'; 
+    const PUBSUB_TOKEN = urlParams.get('pubsub_token') || '';
+    const CHANNEL_ID = urlParams.get('channel_id') || '';
     
     const colors = ['transparent','#000000','#aa0000','#00aa00','#aa5500','#0000aa','#aa00aa','#00aaaa','#aaaaaa','#555555','#ff5555','#55ff55','#ffff55','#5555ff','#ff55ff','#55ffff','#ffffff'];
     const TEST_CODE = "v2000000008751AB52361D2B535F574F83769CC2C3C7FFCCAAFF004D00E436FFEC2729ADFFFF77A8FFF1E8_AAAAAAAAAAAAmQAAAA3QAAmZqqu8zd7uCZmqq7zM3u4AIiM0REjdMAAiY3dEQRMwAAZnd3GIVQMAAAB3cYhVUBEREQABEREQABABAAABABEAEAABAAEBAAAQEREAAQEAABAREAABAQAAEBAAEBABAAAAEAEREAEAAAAREA==";
@@ -659,6 +677,86 @@
       }
     }
 
+    // ==============================================================
+    //  PUBSUB (Channel Points - directo, sin intermediarios)
+    // ==============================================================
+    const REWARD_MAP = {
+      'Haz Bailar tus Dibujos': (user) => triggerUserDance(user),
+      'Iniciar Pelea':          (user) => { logConsole('pubsub', `⚔️ <b>${user}</b> canjeó PELEA`); triggerFight(); },
+      'Boom':                   (user) => { logConsole('pubsub', `💥 <b>${user}</b> canjeó BOOM`); triggerBoom(); },
+      'Tornado':                (user) => { logConsole('pubsub', `🌪️ <b>${user}</b> canjeó TORNADO`); triggerTornado(); },
+    };
+
+    let pubsubWs = null;
+    let pubsubPingInterval = null;
+
+    function connectPubSub() {
+      if (!PUBSUB_TOKEN || !CHANNEL_ID) {
+        logConsole('pubsub', '⚠️ PubSub deshabilitado (falta pubsub_token o channel_id en la URL)');
+        return;
+      }
+      if (pubsubWs) { try { pubsubWs.close(); } catch(e){} }
+
+      pubsubWs = new WebSocket('wss://pubsub-edge.twitch.tv');
+
+      pubsubWs.onopen = () => {
+        logConsole('pubsub', '✅ PubSub conectado — escuchando puntos de canal');
+        pubsubWs.send(JSON.stringify({
+          type: 'LISTEN',
+          data: {
+            topics: ['channel-points-channel-v1.' + CHANNEL_ID],
+            auth_token: PUBSUB_TOKEN,
+          }
+        }));
+        // Ping cada 4 minutos (Twitch requiere ping cada <5min)
+        if (pubsubPingInterval) clearInterval(pubsubPingInterval);
+        pubsubPingInterval = setInterval(() => {
+          try { pubsubWs.send(JSON.stringify({ type: 'PING' })); }
+          catch(e) { clearInterval(pubsubPingInterval); }
+        }, 240000);
+      };
+
+      pubsubWs.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'RESPONSE' && msg.error) {
+            logConsole('pubsub', `❌ PubSub error: ${msg.error}`);
+            return;
+          }
+          if (msg.type === 'PONG' || msg.type === 'RESPONSE') return;
+          if (msg.type !== 'MESSAGE') return;
+
+          const payload = JSON.parse(msg.data.message);
+          if (payload.type !== 'reward-redeemed') return;
+
+          const redemption = payload.data.redemption;
+          const rewardTitle = redemption.reward.title;
+          const redeemUser = redemption.user.display_name.toLowerCase();
+
+          logConsole('pubsub', `🎁 <b>${redeemUser}</b> canjeó: "${rewardTitle}"`);
+
+          const handler = REWARD_MAP[rewardTitle];
+          if (handler) {
+            handler(redeemUser);
+          } else {
+            logConsole('pubsub', `(recompensa "${rewardTitle}" no tiene acción mapeada)`);
+          }
+        } catch(err) {
+          // Not a parseable PubSub message, ignore
+        }
+      };
+
+      pubsubWs.onclose = () => {
+        logConsole('pubsub', '🔌 PubSub desconectado. Reconectando en 10s...');
+        if (pubsubPingInterval) clearInterval(pubsubPingInterval);
+        setTimeout(connectPubSub, 10000);
+      };
+
+      pubsubWs.onerror = (e) => {
+        console.error('PubSub error', e);
+      };
+    }
+
     // === BORRADO ===
     function removeLastDrawing(u) {
       for (let i=drawings.length-1;i>=0;i--) { if(drawings[i].user===u){drawings[i].el.remove();activeCodes.delete(drawings[i].code);drawings.splice(i,1);return;} }
@@ -676,6 +774,18 @@
         logConsole('event', '🎪 Evento cancelado (dibujos limpiados)');
         updateConsoleStats();
       }
+    }
+
+    // === USER DANCE (channel points) ===
+    function triggerUserDance(targetUser) {
+      const userDrawings = drawings.filter(d => d.user === targetUser);
+      if (userDrawings.length === 0) return;
+      userDrawings.forEach(d => {
+        if (d.el.classList.contains('user-dancing')) return;
+        d.el.classList.add('user-dancing');
+        setTimeout(() => { d.el.classList.remove('user-dancing'); }, 8000);
+      });
+      logConsole('user', `💃 <b>${targetUser}</b> canjeó BAILAR (8s)`);
     }
 
     // === CREAR DIBUJO ===
@@ -1251,6 +1361,12 @@
       document.getElementById('btn-spd2').classList.toggle('active',level===2);
       logConsole('speed',`Velocidad → ${level}`); updateConsoleStats();
     }
+    function testDance() {
+      if (drawings.length === 0) { logConsole('user','No hay dibujos para bailar'); return; }
+      // Pick a random drawing's user to dance
+      const d = drawings[Math.floor(Math.random()*drawings.length)];
+      triggerUserDance(d.user);
+    }
 
     let testSpawnTimer = null;
     function toggleTest() {
@@ -1292,6 +1408,7 @@
     }
 
     connectTwitch();
+    connectPubSub();
     // Start random event scheduler after a short delay
     setTimeout(startRandomEvents, 5000);
   </script>
