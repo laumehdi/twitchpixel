@@ -714,7 +714,7 @@
     // --- BOOM ---
     function triggerBoom() {
       if (activeEvent === 'boom') { endEvent(); return; }
-      if (isEventActive()) return;
+      if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('boom','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'boom'; rainMode = false;
       logConsole('boom', `💥💥💥 BOOM — ${drawings.length} dibujos, 30s`);
@@ -728,7 +728,7 @@
     // --- POGO ---
     function triggerPogo() {
       if (activeEvent === 'pogo') { endEvent(); return; }
-      if (isEventActive()) return;
+      if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('pogo','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'pogo'; rainMode = false;
       logConsole('pogo', `🦘🦘🦘 POGO — ${drawings.length} dibujos rebotando en el suelo, 30s`);
@@ -746,7 +746,7 @@
     // --- VOLCANO ---
     function triggerVolcano() {
       if (activeEvent === 'volcano') { endEvent(); return; }
-      if (isEventActive()) return;
+      if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('volcano','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'volcano'; rainMode = false;
       logConsole('volcano', `🌋🌋🌋 VOLCÁN — ${drawings.length} dibujos erupcionando, 30s`);
@@ -768,7 +768,7 @@
     // --- CONFETTI (Salto) ---
     function triggerConfetti() {
       if (activeEvent === 'confetti') { endEvent(); return; }
-      if (isEventActive()) return;
+      if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('confetti','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'confetti'; rainMode = false;
       logConsole('confetti', `🎊🎊🎊 SALTO — ${drawings.length} dibujos como papel picado, 30s`);
@@ -790,7 +790,7 @@
     // --- FIGHT ---
     function triggerFight() {
       if (activeEvent === 'fight') { endEvent(); return; }
-      if (isEventActive()) return;
+      if (isEventActive()) endEvent();
       const eligible = drawings.filter(d => !d.el.classList.contains('showcase')&&!d.el.classList.contains('waiting')&&!d.el.classList.contains('spiral-to-lane'));
       if (eligible.length < 4) { logConsole('fight','Necesitás al menos 4 dibujos'); return; }
       
