@@ -159,6 +159,7 @@
     .btn-fight { background:#cb4b16; color:#fdf6e3; }
     .btn-volcano { background:#b58900; color:#fdf6e3; }
     .btn-confetti { background:#2aa198; color:#fdf6e3; }
+    .btn-tornado { background:#6c71c4; color:#fdf6e3; }
     .btn-exit  { background:#586e75; color:#fdf6e3; }
     .btn-clear { background:#073642; color:#93a1a1; }
     .btn-speed.active { box-shadow: 0 0 0 2px #2aa198; }
@@ -191,6 +192,7 @@
     .log-line .tag-fight { color:#cb4b16; }
     .log-line .tag-volcano { color:#b58900; }
     .log-line .tag-confetti { color:#2aa198; }
+    .log-line .tag-tornado { color:#6c71c4; }
     .log-line .tag-speed { color:#268bd2; }
     .log-line .tag-rain  { color:#6c71c4; }
     .log-line .tag-event { color:#2aa198; }
@@ -224,6 +226,7 @@
       <button class="btn-fight" onclick="triggerFight()">⚔️ Fight</button>
       <button class="btn-volcano" onclick="triggerVolcano()">🌋 Volcán</button>
       <button class="btn-confetti" onclick="triggerConfetti()">🎊 Salto</button>
+      <button class="btn-tornado" onclick="triggerTornado()">🌪️ Tornado</button>
       <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info','Limpiado')">🗑️</button>
       <button class="btn-exit" onclick="toggleTest()">❌ Salir</button>
     </div>
@@ -253,7 +256,7 @@
     let lastTime = performance.now();
 
     // === EVENT SYSTEM STATE ===
-    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | 'volcano' | 'confetti' | null
+    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | 'volcano' | 'confetti' | 'tornado' | null
     let eventTimer = null;
     let randomEventScheduler = null;
     let fightState = null;
@@ -479,6 +482,47 @@
           continue;
         }
 
+        // === TORNADO ===
+        if (activeEvent === 'tornado') {
+          d.el.style.opacity = 1;
+          // Elapsed time for phase changes
+          const elapsed = (now - d.tornadoStart) / 1000; // seconds
+          
+          // Radius shrinks over first 5s (gathering), then pulses
+          let targetRadius;
+          if (elapsed < 5) {
+            targetRadius = 600 - elapsed * 90; // 600 -> 150
+          } else {
+            targetRadius = 150 + Math.sin(elapsed * 0.8) * 80; // pulses 70-230
+          }
+          d.tornadoRadius += (targetRadius - d.tornadoRadius) * 0.03 * dt;
+          
+          // Spin speed accelerates over time, caps at ~0.08
+          const spinSpeed = Math.min(0.08, 0.015 + elapsed * 0.003);
+          d.tornadoAngle += spinSpeed * dt;
+          
+          // Vertical oscillation — drawings ride up and down like a real tornado
+          const vertBase = 500; // center Y
+          const vertAmp = 250 + Math.sin(elapsed * 0.5 + d.fightPhase) * 100;
+          const vertTarget = vertBase + Math.sin(d.tornadoAngle * 0.7 + d.fightPhase * 2) * vertAmp;
+          d.y += (vertTarget - d.y) * 0.04 * dt;
+          
+          // Horizontal: orbit around center
+          const centerX = 960;
+          const targetX = centerX + Math.cos(d.tornadoAngle + d.fightPhase) * d.tornadoRadius;
+          d.x += (targetX - d.x) * 0.06 * dt;
+          
+          // Fast spin rotation
+          d.boomRot += (spinSpeed * 400 + 2) * dt;
+          
+          // Slight scale variation based on height (smaller when "higher")
+          const heightFactor = 1 - (d.y - 250) / 1200 * 0.3; // 0.85 to 1.1ish
+          const scale = Math.max(0.6, Math.min(1.2, heightFactor));
+          
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0) rotate(${d.boomRot}deg) scale(${scale.toFixed(2)})`;
+          continue;
+        }
+
         // === FIGHT ===
         if (activeEvent === 'fight') {
           if (d.fightDead) { d.el.style.opacity = 0; continue; }
@@ -608,6 +652,7 @@
       else if (cmd === '!fight' && isAdmin) triggerFight();
       else if (cmd === '!volcan' && isAdmin) triggerVolcano();
       else if (cmd === '!salto' && isAdmin) triggerConfetti();
+      else if (cmd === '!tornado' && isAdmin) triggerTornado();
       else if (cmd === '!velocidad' && isAdmin) {
         if (args[1]==='1') { globalSpeedMultiplier=0.54; logConsole('speed','Vel → 1'); }
         else if (args[1]==='2') { globalSpeedMultiplier=1.0; logConsole('speed','Vel → 2'); }
@@ -670,7 +715,7 @@
         itemEl.style.zIndex=Z_INDEXES[laneIdx];
         document.getElementById('container').appendChild(itemEl);
 
-        let obj={el:itemEl,user,code:fullCode,lane:laneIdx,speed:SPEEDS[laneIdx],y:LANES[laneIdx],x:forceX||-400,isTest,dying:false,vy:0,rot:0,rainOriginX:0,rainSpeed:1,rainPhase:0,loops:0,boomVx:0,boomVy:0,boomRot:0,boomRotSpeed:0,fightSide:null,fightSlotX:0,fightSlotY:0,fightPhase:Math.random()*7,fightDead:false};
+        let obj={el:itemEl,user,code:fullCode,lane:laneIdx,speed:SPEEDS[laneIdx],y:LANES[laneIdx],x:forceX||-400,isTest,dying:false,vy:0,rot:0,rainOriginX:0,rainSpeed:1,rainPhase:0,loops:0,boomVx:0,boomVy:0,boomRot:0,boomRotSpeed:0,fightSide:null,fightSlotX:0,fightSlotY:0,fightPhase:Math.random()*7,fightDead:false,tornadoAngle:0,tornadoRadius:0,tornadoStart:0};
         if(forceX===undefined) obj.x=Math.min(-200, getMinXInLane(laneIdx,null)-350);
         obj.rainOriginX=obj.x;
         drawings.push(obj);
@@ -683,6 +728,7 @@
           else if (activeEvent === 'pogo') { obj.boomVx=(Math.random()-0.5)*8; obj.boomVy=-(14+Math.random()*10); obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*10; }
           else if (activeEvent === 'volcano') { obj.x=880+(Math.random()-0.5)*160; obj.y=1080; obj.boomVy=-(18+Math.random()*16); obj.boomVx=(Math.random()-0.5)*12; obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*10; }
           else if (activeEvent === 'confetti') { obj.x=Math.random()*1800; obj.y=950; obj.boomVy=-(12+Math.random()*18); obj.boomVx=(Math.random()-0.5)*10; obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*14; }
+          else if (activeEvent === 'tornado') { obj.tornadoAngle=Math.random()*Math.PI*2; obj.tornadoRadius=300+Math.random()*400; obj.tornadoStart=Date.now()-5000; obj.boomRot=0; obj.fightPhase=Math.random()*7; }
           else if (activeEvent === 'fight' && fightState) {
             const side = Math.random()<0.5?'left':'right';
             const team = side==='left'?fightState.leftTeam:fightState.rightTeam;
@@ -730,6 +776,7 @@
             else if (activeEvent==='pogo') { assignBoomPhysics(cur); cur.boomVy=-14; cur.y=400; }
             else if (activeEvent==='volcano') { cur.x=880+(Math.random()-0.5)*160; cur.y=1080; cur.boomVy=-(18+Math.random()*16); cur.boomVx=(Math.random()-0.5)*12; cur.boomRot=0; cur.boomRotSpeed=(Math.random()-0.5)*10; }
             else if (activeEvent==='confetti') { cur.x=Math.random()*1800; cur.y=950; cur.boomVy=-(12+Math.random()*18); cur.boomVx=(Math.random()-0.5)*10; cur.boomRot=0; cur.boomRotSpeed=(Math.random()-0.5)*14; }
+            else if (activeEvent==='tornado') { cur.tornadoAngle=Math.random()*Math.PI*2; cur.tornadoRadius=200; cur.tornadoStart=Date.now()-5000; cur.boomRot=0; cur.fightPhase=Math.random()*7; }
             else if (activeEvent==='fight') {
               cur.fightSide = Math.random()<0.5?'left':'right';
               cur.fightSlotX = cur.fightSide==='left'?100+Math.random()*150:1650+Math.random()*150;
@@ -755,6 +802,7 @@
                 else if(activeEvent==='pogo'){assignBoomPhysics(cur);cur.boomVy=-14;cur.y=400;}
                 else if(activeEvent==='volcano'){cur.x=880+(Math.random()-0.5)*160;cur.y=1080;cur.boomVy=-(18+Math.random()*16);cur.boomVx=(Math.random()-0.5)*12;cur.boomRot=0;cur.boomRotSpeed=(Math.random()-0.5)*10;}
                 else if(activeEvent==='confetti'){cur.x=Math.random()*1800;cur.y=950;cur.boomVy=-(12+Math.random()*18);cur.boomVx=(Math.random()-0.5)*10;cur.boomRot=0;cur.boomRotSpeed=(Math.random()-0.5)*14;}
+                else if(activeEvent==='tornado'){cur.tornadoAngle=Math.random()*Math.PI*2;cur.tornadoRadius=200;cur.tornadoStart=Date.now()-5000;cur.boomRot=0;cur.fightPhase=Math.random()*7;}
               } else { cur.el.classList.add('jumping'); cur.loops=0; }
               logConsole('sub',`✅ <b>${cur.user}</b> aterrizó`);
               isShowcaseBusy=false; processQueue();
@@ -864,6 +912,27 @@
         d.boomVx = (Math.random() - 0.5) * 10;
         d.boomRot = 0;
         d.boomRotSpeed = (Math.random() - 0.5) * 14; // lots of spin
+        d.fightPhase = Math.random() * 7;
+      });
+      eventTimer = setTimeout(endEvent, 30000);
+    }
+
+    // --- TORNADO ---
+    function triggerTornado() {
+      if (activeEvent === 'tornado') { endEvent(); return; }
+      if (isEventActive()) endEvent();
+      if (drawings.length < 2) { logConsole('tornado','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'tornado'; rainMode = false;
+      forceAllSubsToEvent();
+      const startTime = Date.now();
+      logConsole('tornado', `🌪️🌪️🌪️ TORNADO — ${drawings.length} dibujos en el remolino, 30s`);
+      drawings.forEach((d, i) => {
+        d.el.classList.remove('jumping');
+        // Each drawing starts at a different angle, spread around the circle
+        d.tornadoAngle = (Math.PI * 2 / drawings.length) * i;
+        d.tornadoRadius = 300 + Math.random() * 400; // start spread out
+        d.tornadoStart = startTime;
+        d.boomRot = 0;
         d.fightPhase = Math.random() * 7;
       });
       eventTimer = setTimeout(endEvent, 30000);
@@ -1080,13 +1149,30 @@
       wt.textContent = `🏆 EQUIPO ${sideName} GANA!`;
       wt.style.display = 'block';
 
-      // Position winners in center for victory dance
-      winners.forEach((d, i) => {
-        d.el.style.opacity = 1;
-        const spacing = Math.min(200, 800 / winners.length);
-        d.x = 960 - (winners.length-1)*spacing/2 + i*spacing;
-        d.y = 480;
-      });
+      // Position winners in center for victory dance - grid layout for many
+      const count = winners.length;
+      if (count <= 4) {
+        // Single row, well spaced
+        const spacing = Math.min(220, 1400 / count);
+        winners.forEach((d, i) => {
+          d.el.style.opacity = 1;
+          d.x = 960 - (count-1)*spacing/2 + i*spacing;
+          d.y = 450;
+        });
+      } else {
+        // Grid: 2 rows
+        const cols = Math.ceil(count / 2);
+        const spacingX = Math.min(220, 1400 / cols);
+        const spacingY = 200;
+        winners.forEach((d, i) => {
+          d.el.style.opacity = 1;
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          const rowCount = row === 0 ? cols : count - cols;
+          d.x = 960 - (rowCount-1)*spacingX/2 + col*spacingX;
+          d.y = 380 + row * spacingY;
+        });
+      }
 
       // After 8s of victory dance, end the event
       setTimeout(() => {
@@ -1121,7 +1207,7 @@
           return;
         }
         // Pick a random event
-        const events = ['boom', 'pogo', 'fight', 'volcano', 'confetti'];
+        const events = ['boom', 'pogo', 'fight', 'volcano', 'confetti', 'tornado'];
         const pick = events[Math.floor(Math.random()*events.length)];
         logConsole('event', `🎲 Evento aleatorio: <b>${pick.toUpperCase()}</b>`);
         
@@ -1130,6 +1216,7 @@
         else if (pick === 'fight') triggerFight();
         else if (pick === 'volcano') triggerVolcano();
         else if (pick === 'confetti') triggerConfetti();
+        else if (pick === 'tornado') triggerTornado();
 
         // Schedule next after this one ends
         // Wait for current event to finish + schedule
