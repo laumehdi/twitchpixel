@@ -337,6 +337,7 @@
           <button onclick="redo()" style="background:#6c757d; flex:0.5;" title="Rehacer (Ctrl+Y)">↪</button>
           <button onclick="clearCanvas()" style="background:#dc3545">Borrar</button>
           <button onclick="generateCodeAndSave()">Exportar</button>
+          <button onclick="downloadPNG()" style="background:#28a745; flex:0.5;" title="Guardar PNG">💾</button>
         </div>
 
         <input type="text" id="output" readonly onclick="copyToClipboard()" placeholder="Exporta y copia el código">
@@ -734,6 +735,26 @@
         out.value = "¡COPIADO!";
         setTimeout(() => { out.value = textToCopy; }, 1200);
       }
+    }
+
+    function downloadPNG() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      const scale = 128 / 16;
+      cells.forEach((cell, i) => {
+        const idx = parseInt(cell.dataset.idx);
+        if (idx !== 0) {
+          ctx.fillStyle = currentColors[idx];
+          ctx.fillRect((i % 16) * scale, Math.floor(i / 16) * scale, scale, scale);
+        }
+        // idx 0 = transparent, no fillRect = PNG transparency preserved
+      });
+      const link = document.createElement('a');
+      link.download = 'pixel_art_128x128.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
     }
 
     renderPalettesBar(); renderActiveColors(); renderHistory();
