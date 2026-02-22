@@ -111,6 +111,15 @@
     }
     .clear-history-btn:active { transform: scale(0.95); }
 
+    .import-history-btn {
+        position: absolute; top: 15px; right: 55px;
+        width: 34px; height: 34px; background: #0dcaf0;
+        border: none; border-radius: 4px; color: #000; font-size: 16px; font-weight: bold;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 50;
+    }
+    .import-history-btn:active { transform: scale(0.95); }
+
     /* WORKSPACE */
     .workspace { display: flex; flex-direction: row; gap: 12px; align-items: flex-start; margin-top: 5px; }
 
@@ -300,7 +309,7 @@
 
   <div class="header-info">
     <a href="https://twitch.tv/laumehdi" target="_blank">twitch.tv/laumehdi</a>
-    <p>DIBUJA, GENERA EL CODIGO Y COPIALO EN EL CHAT</p>
+    <p>DIBUJA, EXPORTA EL CODIGO Y COPIALO EN EL CHAT</p>
   </div>
 
   <div class="app-container">
@@ -327,11 +336,10 @@
           <button onclick="undo()" style="background:#6c757d; flex:0.5;" title="Deshacer (Ctrl+Z)">↩</button>
           <button onclick="redo()" style="background:#6c757d; flex:0.5;" title="Rehacer (Ctrl+Y)">↪</button>
           <button onclick="clearCanvas()" style="background:#dc3545">Borrar</button>
-          <button onclick="pasteFromClipboard()" style="background:#0dcaf0; color: #000;">Importar</button>
-          <button onclick="generateCodeAndSave()">Generar</button>
+          <button onclick="generateCodeAndSave()">Exportar</button>
         </div>
 
-        <input type="text" id="output" readonly onclick="copyToClipboard()" placeholder="Genera y copia el código">
+        <input type="text" id="output" readonly onclick="copyToClipboard()" placeholder="Exporta y copia el código">
       </div>
 
       <div class="right-column">
@@ -566,19 +574,27 @@
     function renderHistory() {
         const container = document.getElementById('historyList'); container.innerHTML = '';
         const history = JSON.parse(localStorage.getItem('pixelArtHistory') || '[]');
-        if (history.length === 0) { container.innerHTML = '<div style="font-size:12px; opacity:0.6; padding:10px;">No hay dibujos guardados</div>'; return; }
-        history.forEach((draw, index) => {
-            const btn = document.createElement('div'); btn.className = 'history-btn';
-            btn.onclick = () => loadDrawing(index);
-            const gridPreview = document.createElement('div'); gridPreview.className = 'thumb-grid';
-            const pal = ['transparent', ...PALETTES[draw.palette].colors];
-            draw.data.forEach(idx => {
-                const p = document.createElement('div'); p.className = 'thumb-pixel';
-                if(idx !== 0) p.style.backgroundColor = pal[idx];
-                gridPreview.appendChild(p);
-            });
-            btn.appendChild(gridPreview); container.appendChild(btn);
-        });
+        if (history.length === 0) { container.innerHTML = '<div style="font-size:12px; opacity:0.6; padding:10px;">No hay dibujos guardados</div>'; }
+        else {
+          history.forEach((draw, index) => {
+              const btn = document.createElement('div'); btn.className = 'history-btn';
+              btn.onclick = () => loadDrawing(index);
+              const gridPreview = document.createElement('div'); gridPreview.className = 'thumb-grid';
+              const palData = PALETTES[draw.palette];
+              const pal = palData ? ['transparent', ...palData.colors] : currentColors;
+              draw.data.forEach(idx => {
+                  const p = document.createElement('div'); p.className = 'thumb-pixel';
+                  if(idx !== 0 && pal[idx]) p.style.backgroundColor = pal[idx];
+                  gridPreview.appendChild(p);
+              });
+              btn.appendChild(gridPreview); container.appendChild(btn);
+          });
+        }
+        // Import button
+        const importBtn = document.createElement('button');
+        importBtn.className = 'import-history-btn'; importBtn.innerHTML = "📥"; importBtn.title = "Importar código";
+        importBtn.onclick = pasteFromClipboard; container.appendChild(importBtn);
+        // Clear button
         const clearBtn = document.createElement('button');
         clearBtn.className = 'clear-history-btn'; clearBtn.innerHTML = "✖"; clearBtn.title = "Borrar todo el historial";
         clearBtn.onclick = clearHistory; container.appendChild(clearBtn);
