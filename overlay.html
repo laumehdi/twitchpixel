@@ -248,6 +248,7 @@
 
     let drawings = [], testMode = false, rainMode = false;
     let subQueue = [], isShowcaseBusy = false, ws = null, activeCodes = new Set();
+    let showcaseTimer = null; // <-- NUEVO TIMER
     let testUserCounter = 0, globalSpeedMultiplier = 0.54;
     let lastTime = performance.now();
 
@@ -720,7 +721,7 @@
         cur.el.classList.remove('waiting','hidden');
         cur.el.classList.add('showcase');
         logConsole('sub', `🎉 <b>${cur.user}</b> BAILANDO`);
-        setTimeout(() => {
+        showcaseTimer = setTimeout(() => {
           cur.el.classList.remove('showcase');
           // If any event is active, join it directly
           if (isEventActive()) {
@@ -768,7 +769,30 @@
     // ==============================================================
     //  EVENTS
     // ==============================================================
-
+// Corta el baile de los subs y los manda a la acción
+    function forceAllSubsToEvent() {
+      // 1. Frenamos el timer del baile actual
+      if (isShowcaseBusy && showcaseTimer) {
+        clearTimeout(showcaseTimer);
+        showcaseTimer = null;
+        isShowcaseBusy = false;
+      }
+      // 2. A todos los subs que estaban bailando, esperando o volando, los limpiamos
+      drawings.forEach(d => {
+        if (d.el.classList.contains('showcase')) {
+           d.el.classList.remove('showcase');
+           d.el.style.transform = '';
+        }
+        if (d.el.classList.contains('waiting')) d.el.classList.remove('waiting', 'hidden');
+        if (d.el.classList.contains('spiral-to-lane')) {
+           d.el.classList.remove('spiral-to-lane');
+           d.el.style.transform = '';
+        }
+      });
+      // 3. Vaciamos la cola de subs (ya van a entrar todos a pelear/volar)
+      subQueue = [];
+    }
+    
     // --- BOOM ---
     function triggerBoom() {
       if (activeEvent === 'boom') { endEvent(); return; }
