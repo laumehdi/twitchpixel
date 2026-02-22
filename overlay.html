@@ -278,6 +278,27 @@
     let eventTimer = null;
     let fightState = null;
 
+    // === EVENT QUEUE ===
+    // When a user pays points and an event is already running, queue it
+    let eventQueue = [];
+
+    function queueOrRun(eventName, triggerFn) {
+      if (isEventActive()) {
+        eventQueue.push({ name: eventName, fn: triggerFn });
+        logConsole('event', `⏳ <b>${eventName.toUpperCase()}</b> en cola (pos ${eventQueue.length}) — esperando que termine el actual`);
+        return;
+      }
+      triggerFn();
+    }
+
+    function processQueue() {
+      if (eventQueue.length === 0) return;
+      const next = eventQueue.shift();
+      logConsole('event', `▶️ Lanzando <b>${next.name.toUpperCase()}</b> desde la cola (quedan ${eventQueue.length})`);
+      // Small delay so restoreToLanes finishes visually
+      setTimeout(() => next.fn(), 1500);
+    }
+
     // === FIGHT SOUNDS ===
     // Files must be in the same directory as this HTML
     function playSound(src, volume = 0.7) {
@@ -364,6 +385,8 @@
       restoreToLanes();
       logConsole('event', `🎪 Evento <b>${evName}</b> terminado — volviendo a carriles`);
       updateConsoleStats();
+      // Check if there's a queued event
+      processQueue();
     }
 
     function isEventActive() { return activeEvent !== null; }
@@ -676,12 +699,12 @@
         logConsole('pubsub', `🚀 <b>${user}</b> canjeó VELOCIDAD — 1 minuto a toda máquina!`);
         setTimeout(() => { globalSpeedMultiplier = 0.54; logConsole('pubsub', `🐢 Velocidad volvió a la normalidad`); }, 60000);
       },
-      'Iniciar Pelea':          (user) => { logConsole('pubsub', `⚔️ <b>${user}</b> canjeó PELEA`); triggerFight(); },
-      'Boom':                   (user) => { logConsole('pubsub', `💥 <b>${user}</b> canjeó BOOM`); triggerBoom(); },
-      'Tornado':                (user) => { logConsole('pubsub', `🌪️ <b>${user}</b> canjeó TORNADO`); triggerTornado(); },
-      'Pogo':                   (user) => { logConsole('pubsub', `🦘 <b>${user}</b> canjeó POGO`); triggerPogo(); },
-      'Volcan':                 (user) => { logConsole('pubsub', `🌋 <b>${user}</b> canjeó VOLCÁN`); triggerVolcano(); },
-      'Salto':                  (user) => { logConsole('pubsub', `🎊 <b>${user}</b> canjeó SALTO`); triggerConfetti(); },
+      'Iniciar Pelea':          (user) => { logConsole('pubsub', `⚔️ <b>${user}</b> canjeó PELEA`); queueOrRun('fight', triggerFight); },
+      'Boom':                   (user) => { logConsole('pubsub', `💥 <b>${user}</b> canjeó BOOM`); queueOrRun('boom', triggerBoom); },
+      'Tornado':                (user) => { logConsole('pubsub', `🌪️ <b>${user}</b> canjeó TORNADO`); queueOrRun('tornado', triggerTornado); },
+      'Pogo':                   (user) => { logConsole('pubsub', `🦘 <b>${user}</b> canjeó POGO`); queueOrRun('pogo', triggerPogo); },
+      'Volcan':                 (user) => { logConsole('pubsub', `🌋 <b>${user}</b> canjeó VOLCÁN`); queueOrRun('volcano', triggerVolcano); },
+      'Salto':                  (user) => { logConsole('pubsub', `🎊 <b>${user}</b> canjeó SALTO`); queueOrRun('confetti', triggerConfetti); },
       'Lluvia':                 (user) => { logConsole('pubsub', `🌧️ <b>${user}</b> canjeó LLUVIA`); toggleRain(); },
     };
 
