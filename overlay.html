@@ -605,6 +605,14 @@
     }
     function removeAllDrawingsGlobal() {
       drawings.forEach(d=>d.el.remove()); drawings=[];activeCodes.clear();subQueue=[];isShowcaseBusy=false;
+      // If an event is running, cancel it since there's nothing left
+      if (isEventActive()) {
+        if (eventTimer) { clearTimeout(eventTimer); eventTimer = null; }
+        activeEvent = null; fightState = null;
+        document.getElementById('fight-hud').style.display = 'none';
+        logConsole('event', '🎪 Evento cancelado (dibujos limpiados)');
+        updateConsoleStats();
+      }
     }
 
     // === CREAR DIBUJO ===
