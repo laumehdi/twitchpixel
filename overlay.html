@@ -257,6 +257,22 @@
     let randomEventScheduler = null;
     let fightState = null;
 
+    // === FIGHT SOUNDS ===
+    // Files must be in the same directory as this HTML
+    function playSound(src, volume = 0.7) {
+      try {
+        const audio = new Audio(src);
+        audio.volume = volume;
+        audio.play().catch(() => {}); // ignore autoplay errors silently
+      } catch(e) {}
+    }
+    const SFX = {
+      sword: 'sword.opus',
+      shield: 'shield.opus',
+      wilhelm: 'wilhelmscream.opus',
+      win: 'win.opus'
+    };
+
     const LANES = [10, 40, 70, 100], SPEEDS = [2, 3.5, 2.5, 4.5], Z_INDEXES = [5, 20, 10, 30];
 
     // === CONSOLA ===
@@ -869,7 +885,9 @@
         leftTotalHP: leftTotalHP, rightTotalHP: rightTotalHP,
         leftMaxHP: leftTotalHP, rightMaxHP: rightTotalHP,
         nextHitTime: 0,
-        baseInterval: baseInterval
+        baseInterval: baseInterval,
+        wilhelmPlayed: false,
+        hitCount: 0
       };
 
       // Show HUD
@@ -915,43 +933,61 @@
         
         // Pick a random defender to take a hit
         const target = defenders[Math.floor(Math.random() * defenders.length)];
-        target.fightHP--;
-
-        // Flash the hit target briefly
-        target.el.style.filter = 'brightness(3)';
-        setTimeout(() => { if (!target.fightDead) target.el.style.filter = ''; }, 150);
-
-        // Update team total HP
-        if (attackSide === 'left') fightState.rightTotalHP--;
-        else fightState.leftTotalHP--;
-
-        // Update HP bars
-        document.getElementById('hp-left').style.width = Math.max(0, fightState.leftTotalHP / fightState.leftMaxHP * 100) + '%';
-        document.getElementById('hp-right').style.width = Math.max(0, fightState.rightTotalHP / fightState.rightMaxHP * 100) + '%';
-
-        // Did the target die?
-        if (target.fightHP <= 0) {
-          target.fightDead = true;
-          spawnExplosion(target.x, target.y);
-          target.el.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-          target.el.style.transform += ' scale(1.5)';
-          target.el.style.opacity = 0;
-          target.el.style.filter = '';
-          setTimeout(() => { target.el.style.transition = ''; }, 350);
-
-          const defSide = attackSide === 'left' ? '🔵' : '🔴';
-          logConsole('fight', `💀 <b>${target.user}</b> (${defSide}) MUERTO! [🔴 ${fightState.leftTeam.filter(d=>!d.fightDead).length} vs ${fightState.rightTeam.filter(d=>!d.fightDead).length} 🔵]`);
-
-          // Check if a full team is wiped
-          const leftRemain = fightState.leftTeam.filter(d => !d.fightDead).length;
-          const rightRemain = fightState.rightTeam.filter(d => !d.fightDead).length;
-          if (leftRemain === 0 || rightRemain === 0) {
-            finishFight();
-            return;
-          }
+        fightState.hitCount++;
+        
+        // 25% chance the hit is blocked (shield sound, no damage)
+        const blocked = Math.random() < 0.25;
+        
+        if (blocked) {
+          playSound(SFX.shield, 0.5);
+          target.el.style.filter = 'brightness(2)';
+          setTimeout(() => { if (!target.fightDead) target.el.style.filter = ''; }, 100);
+          logConsole('fight', `🛡️ <b>${target.user}</b> (${attackSide==='left'?'🔵':'🔴'}) bloqueó el golpe!`);
         } else {
-          const defSide = attackSide === 'left' ? '🔵' : '🔴';
-          logConsole('fight', `⚔️ <b>${target.user}</b> (${defSide}) recibe golpe! HP: ${target.fightHP}/${target.fightMaxHP}`);
+          target.fightHP--;
+          playSound(SFX.sword, 0.6);
+
+          target.el.style.filter = 'brightness(3)';
+          setTimeout(() => { if (!target.fightDead) target.el.style.filter = ''; }, 150);
+
+          // Update team total HP
+          if (attackSide === 'left') fightState.rightTotalHP--;
+          else fightState.leftTotalHP--;
+
+          // Update HP bars
+          document.getElementById('hp-left').style.width = Math.max(0, fightState.leftTotalHP / fightState.leftMaxHP * 100) + '%';
+          document.getElementById('hp-right').style.width = Math.max(0, fightState.rightTotalHP / fightState.rightMaxHP * 100) + '%';
+
+          // Did the target die?
+          if (target.fightHP <= 0) {
+            target.fightDead = true;
+            spawnExplosion(target.x, target.y);
+            target.el.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+            target.el.style.transform += ' scale(1.5)';
+            target.el.style.opacity = 0;
+            target.el.style.filter = '';
+            setTimeout(() => { target.el.style.transition = ''; }, 350);
+
+            // Wilhelm scream — once per fight, on a random death
+            if (!fightState.wilhelmPlayed && fightState.hitCount > 3 && Math.random() < 0.35) {
+              playSound(SFX.wilhelm, 0.8);
+              fightState.wilhelmPlayed = true;
+              logConsole('fight', `😱 ¡¡WILHELM SCREAM!!`);
+            }
+
+            const defSide = attackSide === 'left' ? '🔵' : '🔴';
+            logConsole('fight', `💀 <b>${target.user}</b> (${defSide}) MUERTO! [🔴 ${fightState.leftTeam.filter(d=>!d.fightDead).length} vs ${fightState.rightTeam.filter(d=>!d.fightDead).length} 🔵]`);
+
+            const leftRemain = fightState.leftTeam.filter(d => !d.fightDead).length;
+            const rightRemain = fightState.rightTeam.filter(d => !d.fightDead).length;
+            if (leftRemain === 0 || rightRemain === 0) {
+              finishFight();
+              return;
+            }
+          } else {
+            const defSide = attackSide === 'left' ? '🔵' : '🔴';
+            logConsole('fight', `⚔️ <b>${target.user}</b> (${defSide}) recibe golpe! HP: ${target.fightHP}/${target.fightMaxHP}`);
+          }
         }
 
         // Next hit: random interval around baseInterval
@@ -972,7 +1008,7 @@
       const sideName = winningSide === 'left' ? 'ROJO' : 'AZUL';
 
       logConsole('fight', `🏆 EQUIPO ${sideEmoji} ${sideName} GANA! Sobrevivientes: ${winners.map(d=>d.user).join(', ')}`);
-
+      playSound(SFX.win, 0.8);
       // Show winner text
       const wt = document.getElementById('fight-winner-text');
       wt.textContent = `🏆 EQUIPO ${sideName} GANA!`;
