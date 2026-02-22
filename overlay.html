@@ -276,7 +276,6 @@
     // === EVENT SYSTEM STATE ===
     let activeEvent = null; // 'boom' | 'pogo' | 'fight' | 'volcano' | 'confetti' | 'tornado' | null
     let eventTimer = null;
-    let randomEventScheduler = null;
     let fightState = null;
 
     // === FIGHT SOUNDS ===
@@ -685,6 +684,10 @@
       'Iniciar Pelea':          (user) => { logConsole('pubsub', `⚔️ <b>${user}</b> canjeó PELEA`); triggerFight(); },
       'Boom':                   (user) => { logConsole('pubsub', `💥 <b>${user}</b> canjeó BOOM`); triggerBoom(); },
       'Tornado':                (user) => { logConsole('pubsub', `🌪️ <b>${user}</b> canjeó TORNADO`); triggerTornado(); },
+      'Pogo':                   (user) => { logConsole('pubsub', `🦘 <b>${user}</b> canjeó POGO`); triggerPogo(); },
+      'Volcan':                 (user) => { logConsole('pubsub', `🌋 <b>${user}</b> canjeó VOLCÁN`); triggerVolcano(); },
+      'Salto':                  (user) => { logConsole('pubsub', `🎊 <b>${user}</b> canjeó SALTO`); triggerConfetti(); },
+      'Lluvia':                 (user) => { logConsole('pubsub', `🌧️ <b>${user}</b> canjeó LLUVIA`); toggleRain(); },
     };
 
     let pubsubWs = null;
@@ -1296,53 +1299,8 @@
     // ==============================================================
     //  RANDOM EVENT SCHEDULER
     // ==============================================================
-    function scheduleNextRandomEvent() {
-      if (randomEventScheduler) clearTimeout(randomEventScheduler);
-      // Random interval between 17 and 25 minutes (in ms)
-      const minMs = 17 * 60 * 1000, maxMs = 25 * 60 * 1000;
-      const delay = minMs + Math.random() * (maxMs - minMs);
-      const mins = (delay/60000).toFixed(1);
-      logConsole('event', `⏰ Próximo evento aleatorio en ~${mins} min`);
-      
-      randomEventScheduler = setTimeout(() => {
-        if (isEventActive() || isShowcaseBusy) {
-          // Retry in 1 min if busy
-          logConsole('event', '⏳ Evento pospuesto (ocupado), reintentando en 1min');
-          randomEventScheduler = setTimeout(() => scheduleNextRandomEvent(), 60000);
-          return;
-        }
-        if (drawings.length < 4) {
-          logConsole('event', '⏳ No hay suficientes dibujos, reintentando en 2min');
-          randomEventScheduler = setTimeout(() => scheduleNextRandomEvent(), 120000);
-          return;
-        }
-        // Pick a random event
-        const events = ['boom', 'pogo', 'fight', 'volcano', 'confetti', 'tornado'];
-        const pick = events[Math.floor(Math.random()*events.length)];
-        logConsole('event', `🎲 Evento aleatorio: <b>${pick.toUpperCase()}</b>`);
-        
-        if (pick === 'boom') triggerBoom();
-        else if (pick === 'pogo') triggerPogo();
-        else if (pick === 'fight') triggerFight();
-        else if (pick === 'volcano') triggerVolcano();
-        else if (pick === 'confetti') triggerConfetti();
-        else if (pick === 'tornado') triggerTornado();
-
-        // Schedule next after this one ends
-        // Wait for current event to finish + schedule
-        const waitForEnd = setInterval(() => {
-          if (!isEventActive()) {
-            clearInterval(waitForEnd);
-            scheduleNextRandomEvent();
-          }
-        }, 1000);
-      }, delay);
-    }
-
-    // Start scheduler on connection
-    function startRandomEvents() {
-      scheduleNextRandomEvent();
-    }
+    // Events are now triggered ONLY by channel point redemptions (PubSub)
+    // or manually by admin commands. No more random scheduler.
 
     // ==============================================================
     //  TEST PANEL
@@ -1409,8 +1367,6 @@
 
     connectTwitch();
     connectPubSub();
-    // Start random event scheduler after a short delay
-    setTimeout(startRandomEvents, 5000);
   </script>
 </body>
 </html>
