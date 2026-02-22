@@ -270,7 +270,8 @@
       sword: 'sword.opus',
       shield: 'shield.opus',
       wilhelm: 'wilhelmscream.opus',
-      win: 'win.opus'
+      win: 'win.opus',
+      fight: 'fight.opus'
     };
 
     const LANES = [10, 40, 70, 100], SPEEDS = [2, 3.5, 2.5, 4.5], Z_INDEXES = [5, 20, 10, 30];
@@ -908,6 +909,7 @@
         if (activeEvent !== 'fight') return;
         const ft = document.getElementById('fight-text');
         ft.style.display = 'block';
+        playSound(SFX.fight, 0.9);
         logConsole('fight', '🔔 FIGHT!');
         setTimeout(() => {
           ft.style.display = 'none';
