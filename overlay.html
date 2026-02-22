@@ -248,12 +248,12 @@
 
     let drawings = [], testMode = false, rainMode = false;
     let subQueue = [], isShowcaseBusy = false, ws = null, activeCodes = new Set();
-    let showcaseTimer = null; // <-- NUEVO TIMER
+    let showcaseTimer = null;
     let testUserCounter = 0, globalSpeedMultiplier = 0.54;
     let lastTime = performance.now();
 
     // === EVENT SYSTEM STATE ===
-    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | null
+    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | 'volcano' | 'confetti' | null
     let eventTimer = null;
     let randomEventScheduler = null;
     let fightState = null;
@@ -271,7 +271,8 @@
       sword: 'sword.opus',
       shield: 'shield.opus',
       wilhelm: 'wilhelmscream.opus',
-      win: 'win.opus'
+      win: 'win.opus',
+      fight: 'fight.opus'
     };
 
     const LANES = [10, 40, 70, 100], SPEEDS = [2, 3.5, 2.5, 4.5], Z_INDEXES = [5, 20, 10, 30];
@@ -675,8 +676,7 @@
         drawings.push(obj);
         if(!isTest) activeCodes.add(fullCode);
         
-        // If an event is active and this is NOT a sub (subs go to showcase first), join the event
-// Si hay un evento activo, TODOS (incluidos los subs) se unen directo sin bailar
+        // If an event is active, ALL drawings (including subs) join directly
         if (isEventActive()) {
           obj.el.classList.remove('jumping');
           if (activeEvent === 'boom') { assignBoomPhysics(obj); }
@@ -706,7 +706,7 @@
           }
         }
         
-// Si es sub y NO hay un evento activo, va a la cola de baile
+        // Subs only go to showcase if no event is active
         if(isSub && !isEventActive()){subQueue.push(obj);processQueue();}
         logConsole(isSub?'sub':'user',`<b>${user}</b> → carril ${laneIdx+1} (${isSub?'SUB':'normal'})`);
       } catch(e){console.error(e);}
@@ -768,7 +768,7 @@
     // ==============================================================
     //  EVENTS
     // ==============================================================
-// Corta el baile de los subs y los manda a la acción
+// Force all subs out of showcase/queue and into the event
     function forceAllSubsToEvent() {
       // 1. Frenamos el timer del baile actual
       if (isShowcaseBusy && showcaseTimer) {
@@ -873,7 +873,7 @@
     function triggerFight() {
       if (activeEvent === 'fight') { endEvent(); return; }
       if (isEventActive()) endEvent();
-      forceAllSubsToEvent(); // <-- AGREGADO ACÁ
+      forceAllSubsToEvent();
       const eligible = drawings.filter(d => !d.el.classList.contains('showcase')&&!d.el.classList.contains('waiting')&&!d.el.classList.contains('spiral-to-lane'));
       if (eligible.length < 4) { logConsole('fight','Necesitás al menos 4 dibujos'); return; }
       
@@ -965,7 +965,7 @@
             setTimeout(tickCountdown, 1000);
           } else if (count === 0) {
             ft.textContent = 'FIGHT!';
-            ft.style.animation = 'fightPulse 0.3s ease-in-out 3'; // 3 latidos para el FIGHT
+            ft.style.animation = 'fightPulse 0.3s ease-in-out 3';
             playSound(SFX.fight, 0.9);
             logConsole('fight', '🔔 FIGHT!');
             count--;
