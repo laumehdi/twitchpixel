@@ -904,21 +904,50 @@
       logConsole('fight', `Equipo 🔴 (${leftTeam.length}, HP total: ${leftTotalHP}): ${leftTeam.map(d=>d.user+'['+d.fightHP+'hp]').join(', ')}`);
       logConsole('fight', `Equipo 🔵 (${rightTeam.length}, HP total: ${rightTotalHP}): ${rightTeam.map(d=>d.user+'['+d.fightHP+'hp]').join(', ')}`);
 
-      // After 8s lineup, show FIGHT!, then start fighting
+// A los 5s de prepararse, arranca el countdown 3, 2, 1, FIGHT!
+      // A los 5s de prepararse, arranca el countdown 3, 2, 1, FIGHT!
       setTimeout(() => {
         if (activeEvent !== 'fight') return;
+        let count = 3;
         const ft = document.getElementById('fight-text');
-        ft.style.display = 'block';
-        playSound(SFX.fight, 0.9);
-        logConsole('fight', '🔔 FIGHT!');
-        setTimeout(() => {
-          ft.style.display = 'none';
-          if (activeEvent !== 'fight' || !fightState) return;
-          fightState.phase = 'fighting';
-          fightState.nextHitTime = Date.now() + 1000 + Math.random() * fightState.baseInterval;
-        }, 2000);
-      }, 8000);
-    }
+        
+        function tickCountdown() {
+          // Si el evento se canceló en el medio, cortamos acá
+          if (activeEvent !== 'fight') {
+             ft.style.display = 'none';
+             return;
+          }
+          
+          ft.style.display = 'block';
+          
+          // Truco para reiniciar la animación CSS en cada cambio de texto
+          ft.style.animation = 'none';
+          void ft.offsetWidth; // Forzamos un reflow
+          
+          if (count > 0) {
+            ft.textContent = count;
+            ft.style.animation = 'fightPulse 0.3s ease-in-out 1'; // 1 latido por número
+            count--;
+            setTimeout(tickCountdown, 1000);
+          } else if (count === 0) {
+            ft.textContent = 'FIGHT!';
+            ft.style.animation = 'fightPulse 0.3s ease-in-out 3'; // 3 latidos para el FIGHT
+            playSound(SFX.fight, 0.9);
+            logConsole('fight', '🔔 FIGHT!');
+            count--;
+            setTimeout(tickCountdown, 1500); // Espera 1.5s leyendo el FIGHT y arranca
+          } else {
+            // Se esconde el texto y arranca a bajar vida
+            ft.style.display = 'none';
+            if (fightState) {
+              fightState.phase = 'fighting';
+              fightState.nextHitTime = Date.now() + 500 + Math.random() * fightState.baseInterval;
+            }
+          }
+        }
+        
+        tickCountdown();
+      }, 5000);
 
     function fightTick(dt) {
       if (!fightState || fightState.phase !== 'fighting') return;
