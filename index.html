@@ -233,24 +233,6 @@
     }
     #output.copied { background: #28a745 !important; color: white !important; border-color: #1e7e34; }
 
-    /* D-PAD */
-    .dpad {
-      display: grid;
-      grid-template-columns: 24px 24px 24px;
-      grid-template-rows: 20px 20px 20px; 
-      gap: 2px; align-items: center; justify-items: center; margin-left: 5px; 
-    }
-    .dpad-btn {
-      padding: 0 !important; margin: 0; width: 100%; height: 100%;
-      font-size: 10px; line-height: 1;
-      display: flex; align-items: center; justify-content: center;
-      background: #444; box-shadow: 0 2px 2px rgba(0,0,0,0.2);
-    }
-    .btn-up    { grid-column: 2; grid-row: 1; border-top-left-radius: 4px; border-top-right-radius: 4px; }
-    .btn-left  { grid-column: 1; grid-row: 2; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
-    .btn-right { grid-column: 3; grid-row: 2; border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
-    .btn-down  { grid-column: 2; grid-row: 3; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
-
     /* MÓVIL (Correcciones finales) */
     @media (max-width: 600px) {
       body { height: 100vh; padding: 10px; padding-bottom: 20px; justify-content: flex-start; }
@@ -311,7 +293,6 @@
       } 
 
       .controls { align-items: center; }
-      .dpad { grid-template-columns: 28px 28px 28px; grid-template-rows: 24px 24px 24px; }
     }
   </style>
 </head>
@@ -343,17 +324,11 @@
         <div class="grid-wrap" id="gridWrap"><div id="grid"></div></div>
         
         <div class="controls">
+          <button onclick="undo()" style="background:#6c757d; flex:0.5;" title="Deshacer (Ctrl+Z)">↩</button>
+          <button onclick="redo()" style="background:#6c757d; flex:0.5;" title="Rehacer (Ctrl+Y)">↪</button>
           <button onclick="clearCanvas()" style="background:#dc3545">Borrar</button>
           <button onclick="pasteFromClipboard()" style="background:#0dcaf0; color: #000;">Importar</button>
           <button onclick="generateCodeAndSave()">Generar</button>
-          
-          <div class="dpad">
-            <button class="dpad-btn btn-up" onclick="shiftDrawing('up')">▲</button>
-            <button class="dpad-btn btn-left" onclick="shiftDrawing('left')">◀</button>
-            <div style="width:4px; height:4px; background:#ccc; border-radius:50%; opacity:0.5;"></div> 
-            <button class="dpad-btn btn-right" onclick="shiftDrawing('right')">▶</button>
-            <button class="dpad-btn btn-down" onclick="shiftDrawing('down')">▼</button>
-          </div>
         </div>
 
         <input type="text" id="output" readonly onclick="copyToClipboard()" placeholder="Genera y copia el código">
@@ -393,6 +368,45 @@
     let currentColors = ['transparent', ...PALETTES['pico8'].colors];
     let selectedIdx = 1; let isDrawing = false;
     
+    // --- UNDO/REDO ---
+    let undoStack = [];
+    let redoStack = [];
+    let lastSnapshot = null;
+    
+    function takeSnapshot() {
+      return cells.map(c => parseInt(c.dataset.idx));
+    }
+    function pushUndo() {
+      const snap = takeSnapshot();
+      // Don't push if identical to last
+      if (lastSnapshot && JSON.stringify(snap) === JSON.stringify(lastSnapshot)) return;
+      undoStack.push(snap);
+      if (undoStack.length > 50) undoStack.shift();
+      redoStack = [];
+      lastSnapshot = snap;
+    }
+    function undo() {
+      if (undoStack.length === 0) return;
+      redoStack.push(takeSnapshot());
+      const prev = undoStack.pop();
+      prev.forEach((val, i) => { cells[i].dataset.idx = val; updateVisual(cells[i]); });
+      lastSnapshot = prev;
+      updatePreview();
+    }
+    function redo() {
+      if (redoStack.length === 0) return;
+      undoStack.push(takeSnapshot());
+      const next = redoStack.pop();
+      next.forEach((val, i) => { cells[i].dataset.idx = val; updateVisual(cells[i]); });
+      lastSnapshot = next;
+      updatePreview();
+    }
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+    });
+    
     // --- CANVAS DE PREVIEW ---
     const previewCanvas = document.getElementById('previewCanvas');
     const previewCtx = previewCanvas.getContext('2d');
@@ -423,7 +437,7 @@
         const max = getMaxZoom();
         zoomLevel += delta;
         if (zoomLevel > max) zoomLevel = max;
-        if (zoomLevel < 0.2) zoomLevel = 0.2;
+        if (zoomLevel < 0.4) zoomLevel = 0.4;
         gridWrap.style.width = (zoomLevel * 100) + "%";
     }
     
@@ -432,7 +446,7 @@
     for (let i = 0; i < 256; i++) {
       const cell = document.createElement('div');
       cell.className = 'cell'; cell.dataset.idx = "0";
-      cell.onmousedown = (e) => { if(e.button === 0) { isDrawing = true; paint(cell); } };
+      cell.onmousedown = (e) => { if(e.button === 0) { isDrawing = true; pushUndo(); paint(cell); } };
       cell.onmouseover = () => { if(isDrawing) paint(cell); };
       grid.appendChild(cell); cells.push(cell);
     }
@@ -443,14 +457,14 @@
       const target = document.elementFromPoint(touch.clientX, touch.clientY);
       if (target && target.classList.contains('cell')) paint(target);
     }
-    grid.addEventListener('touchstart', (e) => { isDrawing = true; handleTouch(e); e.preventDefault(); }, { passive: false });
+    grid.addEventListener('touchstart', (e) => { isDrawing = true; pushUndo(); handleTouch(e); e.preventDefault(); }, { passive: false });
     grid.addEventListener('touchmove', (e) => { if (isDrawing) handleTouch(e); e.preventDefault(); }, { passive: false });
     grid.addEventListener('touchend', () => isDrawing = false);
 
-    function paint(cell) { 
+    function paint(cell) {
       cell.dataset.idx = selectedIdx; 
-      updateVisual(cell); 
-      updatePreview(); // Actualizar preview en tiempo real
+      updateVisual(cell);
+      updatePreview();
     }
     
     function updateVisual(cell) {
@@ -528,9 +542,18 @@
         const history = JSON.parse(localStorage.getItem('pixelArtHistory') || '[]');
         const drawing = history[index];
         if (!drawing) return;
-        setPalette(drawing.palette);
+        if (PALETTES[drawing.palette]) {
+            setPalette(drawing.palette);
+        } else {
+            // Custom palette from import — reconstruct colors from the saved data
+            currentKey = drawing.palette || 'pico8';
+            if (PALETTES[currentKey]) {
+                currentColors = ['transparent', ...PALETTES[currentKey].colors];
+            }
+            renderActiveColors();
+        }
         drawing.data.forEach((val, i) => { cells[i].dataset.idx = val; updateVisual(cells[i]); });
-        updatePreview(); // Actualizar preview al cargar dibujo
+        updatePreview();
         toggleAccordion('history');
     }
     
@@ -674,6 +697,7 @@
 
     function clearCanvas() { 
       if(confirm("¿Borrar?")) { 
+        pushUndo();
         cells.forEach(c => { c.dataset.idx="0"; updateVisual(c); }); 
         document.getElementById('output').value=""; 
         updatePreview(); // Limpiar preview también
@@ -694,25 +718,6 @@
         out.value = "¡COPIADO!";
         setTimeout(() => { out.value = textToCopy; }, 1200);
       }
-    }
-
-    function shiftDrawing(direction) {
-      const currentData = cells.map(c => parseInt(c.dataset.idx));
-      const newData = new Array(256).fill(0);
-      const size = 16;
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          let srcX = x;
-          let srcY = y;
-          if (direction === 'up') { srcY = (y + 1) % size; } 
-          else if (direction === 'down') { srcY = (y - 1 + size) % size; } 
-          else if (direction === 'left') { srcX = (x + 1) % size; } 
-          else if (direction === 'right') { srcX = (x - 1 + size) % size; }
-          newData[(y * size) + x] = currentData[(srcY * size) + srcX];
-        }
-      }
-      newData.forEach((val, i) => { cells[i].dataset.idx = val; updateVisual(cells[i]); });
-      updatePreview(); // Actualizar preview al mover
     }
 
     renderPalettesBar(); renderActiveColors(); renderHistory();
