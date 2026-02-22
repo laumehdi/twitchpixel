@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Alpha Gold V23 - Random Events</title>
+  <title>Overlay Alpha Gold V24</title>
   <style>
     /* === Solarized Palette Reference ===
        base03:#002b36 base02:#073642 base01:#586e75 base00:#657b83
@@ -271,8 +271,7 @@
       sword: 'sword.opus',
       shield: 'shield.opus',
       wilhelm: 'wilhelmscream.opus',
-      win: 'win.opus',
-      fight: 'fight.opus'
+      win: 'win.opus'
     };
 
     const LANES = [10, 40, 70, 100], SPEEDS = [2, 3.5, 2.5, 4.5], Z_INDEXES = [5, 20, 10, 30];
@@ -799,9 +798,10 @@
       if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('boom','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'boom'; rainMode = false;
+      forceAllSubsToEvent();
       logConsole('boom', `💥💥💥 BOOM — ${drawings.length} dibujos, 30s`);
       drawings.forEach(d => {
-        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
+        d.el.classList.remove('jumping');
         assignBoomPhysics(d);
       });
       eventTimer = setTimeout(endEvent, 30000);
@@ -813,9 +813,9 @@
       if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('pogo','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'pogo'; rainMode = false;
+      forceAllSubsToEvent();
       logConsole('pogo', `🦘🦘🦘 POGO — ${drawings.length} dibujos rebotando en el suelo, 30s`);
       drawings.forEach(d => {
-        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
         d.el.classList.remove('jumping');
         d.boomVx = (Math.random()-0.5) * 8;
         d.boomVy = -(14 + Math.random()*10); // big initial launch upward
@@ -831,9 +831,9 @@
       if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('volcano','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'volcano'; rainMode = false;
+      forceAllSubsToEvent();
       logConsole('volcano', `🌋🌋🌋 VOLCÁN — ${drawings.length} dibujos erupcionando, 30s`);
       drawings.forEach(d => {
-        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
         d.el.classList.remove('jumping');
         // Start all at the volcano mouth (bottom center)
         d.x = 880 + (Math.random() - 0.5) * 160;
@@ -853,9 +853,9 @@
       if (isEventActive()) endEvent();
       if (drawings.length < 2) { logConsole('confetti','Necesitás al menos 2 dibujos'); return; }
       activeEvent = 'confetti'; rainMode = false;
+      forceAllSubsToEvent();
       logConsole('confetti', `🎊🎊🎊 SALTO — ${drawings.length} dibujos como papel picado, 30s`);
       drawings.forEach(d => {
-        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
         d.el.classList.remove('jumping');
         // Spread across the full width, start from bottom
         d.x = Math.random() * 1800;
