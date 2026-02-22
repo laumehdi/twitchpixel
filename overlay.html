@@ -157,6 +157,8 @@
     .btn-boom  { background:#dc322f; color:#fdf6e3; }
     .btn-pogo  { background:#d33682; color:#fdf6e3; }
     .btn-fight { background:#cb4b16; color:#fdf6e3; }
+    .btn-volcano { background:#b58900; color:#fdf6e3; }
+    .btn-confetti { background:#2aa198; color:#fdf6e3; }
     .btn-exit  { background:#586e75; color:#fdf6e3; }
     .btn-clear { background:#073642; color:#93a1a1; }
     .btn-speed.active { box-shadow: 0 0 0 2px #2aa198; }
@@ -187,6 +189,8 @@
     .log-line .tag-boom  { color:#dc322f; }
     .log-line .tag-pogo  { color:#d33682; }
     .log-line .tag-fight { color:#cb4b16; }
+    .log-line .tag-volcano { color:#b58900; }
+    .log-line .tag-confetti { color:#2aa198; }
     .log-line .tag-speed { color:#268bd2; }
     .log-line .tag-rain  { color:#6c71c4; }
     .log-line .tag-event { color:#2aa198; }
@@ -218,6 +222,8 @@
       <button class="btn-boom" onclick="triggerBoom()">💥 Boom</button>
       <button class="btn-pogo" onclick="triggerPogo()">🦘 Pogo</button>
       <button class="btn-fight" onclick="triggerFight()">⚔️ Fight</button>
+      <button class="btn-volcano" onclick="triggerVolcano()">🌋 Volcán</button>
+      <button class="btn-confetti" onclick="triggerConfetti()">🎊 Salto</button>
       <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info','Limpiado')">🗑️</button>
       <button class="btn-exit" onclick="toggleTest()">❌ Salir</button>
     </div>
@@ -408,6 +414,53 @@
           continue;
         }
 
+        // === VOLCANO ===
+        if (activeEvent === 'volcano') {
+          d.el.style.opacity = 1;
+          d.boomVy += 0.25 * dt; // lighter gravity for high arcs
+          d.y += d.boomVy * dt;
+          d.x += d.boomVx * dt;
+          // Slight wind drift
+          d.boomVx += Math.sin(now / 1000 + d.fightPhase) * 0.02 * dt;
+          // When they fall below screen, re-erupt from volcano
+          if (d.y > 1100) {
+            d.x = 880 + (Math.random() - 0.5) * 200; // center-ish
+            d.y = 1080;
+            d.boomVy = -(16 + Math.random() * 14); // big upward blast
+            d.boomVx = (Math.random() - 0.5) * 10; // spread out horizontally
+          }
+          // Cap at top of screen — bounce gently
+          if (d.y < -200) { d.y = -200; d.boomVy = Math.abs(d.boomVy) * 0.3; }
+          d.boomRot += d.boomRotSpeed * dt;
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0) rotate(${d.boomRot}deg)`;
+          continue;
+        }
+
+        // === CONFETTI (Salto) ===
+        if (activeEvent === 'confetti') {
+          d.el.style.opacity = 1;
+          // Strong gravity — they have WEIGHT, fall fast
+          d.boomVy += 0.55 * dt;
+          d.y += d.boomVy * dt;
+          d.x += d.boomVx * dt;
+          // Horizontal wobble like paper
+          d.boomVx += Math.sin(now / 300 + d.fightPhase * 4) * 0.08 * dt;
+          // Dampen horizontal slightly
+          d.boomVx *= 0.999;
+          // When hitting the floor, re-launch upward (slower going up, fast coming down)
+          if (d.y > 950) {
+            d.y = 950;
+            d.boomVy = -(10 + Math.random() * 16); // upward impulse (slower than gravity pull)
+            d.boomVx = (Math.random() - 0.5) * 8; // new random horizontal spread
+          }
+          // Bounce off walls
+          if (d.x < -80) { d.x = -80; d.boomVx = Math.abs(d.boomVx); }
+          if (d.x > 1840) { d.x = 1840; d.boomVx = -Math.abs(d.boomVx); }
+          d.boomRot += d.boomRotSpeed * dt;
+          d.el.style.transform = `translate3d(${d.x}px,${d.y}px,0) rotate(${d.boomRot}deg)`;
+          continue;
+        }
+
         // === FIGHT ===
         if (activeEvent === 'fight') {
           if (d.fightDead) { d.el.style.opacity = 0; continue; }
@@ -535,6 +588,8 @@
       else if (cmd === '!boom' && isAdmin) triggerBoom();
       else if (cmd === '!pogo' && isAdmin) triggerPogo();
       else if (cmd === '!fight' && isAdmin) triggerFight();
+      else if (cmd === '!volcan' && isAdmin) triggerVolcano();
+      else if (cmd === '!salto' && isAdmin) triggerConfetti();
       else if (cmd === '!velocidad' && isAdmin) {
         if (args[1]==='1') { globalSpeedMultiplier=0.54; logConsole('speed','Vel → 1'); }
         else if (args[1]==='2') { globalSpeedMultiplier=1.0; logConsole('speed','Vel → 2'); }
@@ -614,9 +669,10 @@
             cur.el.style.transform='';
             cur.x=960; cur.y=540;
             if (activeEvent==='boom') assignBoomPhysics(cur);
-            else if (activeEvent==='pogo') { assignBoomPhysics(cur); cur.boomVy=-8; cur.y=400; }
+            else if (activeEvent==='pogo') { assignBoomPhysics(cur); cur.boomVy=-14; cur.y=400; }
+            else if (activeEvent==='volcano') { cur.x=880+(Math.random()-0.5)*160; cur.y=1080; cur.boomVy=-(18+Math.random()*16); cur.boomVx=(Math.random()-0.5)*12; cur.boomRot=0; cur.boomRotSpeed=(Math.random()-0.5)*10; }
+            else if (activeEvent==='confetti') { cur.x=Math.random()*1800; cur.y=950; cur.boomVy=-(12+Math.random()*18); cur.boomVx=(Math.random()-0.5)*10; cur.boomRot=0; cur.boomRotSpeed=(Math.random()-0.5)*14; }
             else if (activeEvent==='fight') {
-              // Late joiner goes to a random side
               cur.fightSide = Math.random()<0.5?'left':'right';
               cur.fightSlotX = cur.fightSide==='left'?100+Math.random()*150:1650+Math.random()*150;
               cur.fightSlotY = 200+Math.random()*600;
@@ -638,7 +694,9 @@
               cur.x=tX;cur.y=tY;
               if(isEventActive()){
                 if(activeEvent==='boom')assignBoomPhysics(cur);
-                else if(activeEvent==='pogo'){assignBoomPhysics(cur);cur.boomVy=-8;cur.y=400;}
+                else if(activeEvent==='pogo'){assignBoomPhysics(cur);cur.boomVy=-14;cur.y=400;}
+                else if(activeEvent==='volcano'){cur.x=880+(Math.random()-0.5)*160;cur.y=1080;cur.boomVy=-(18+Math.random()*16);cur.boomVx=(Math.random()-0.5)*12;cur.boomRot=0;cur.boomRotSpeed=(Math.random()-0.5)*10;}
+                else if(activeEvent==='confetti'){cur.x=Math.random()*1800;cur.y=950;cur.boomVy=-(12+Math.random()*18);cur.boomVx=(Math.random()-0.5)*10;cur.boomRot=0;cur.boomRotSpeed=(Math.random()-0.5)*14;}
               } else { cur.el.classList.add('jumping'); cur.loops=0; }
               logConsole('sub',`✅ <b>${cur.user}</b> aterrizó`);
               isShowcaseBusy=false; processQueue();
@@ -679,6 +737,48 @@
         d.boomVy = -(14 + Math.random()*10); // big initial launch upward
         d.boomRot = 0;
         d.boomRotSpeed = (Math.random()-0.5)*10;
+      });
+      eventTimer = setTimeout(endEvent, 30000);
+    }
+
+    // --- VOLCANO ---
+    function triggerVolcano() {
+      if (isEventActive()) return;
+      if (drawings.length < 2) { logConsole('volcano','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'volcano'; rainMode = false;
+      logConsole('volcano', `🌋🌋🌋 VOLCÁN — ${drawings.length} dibujos erupcionando, 30s`);
+      drawings.forEach(d => {
+        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
+        d.el.classList.remove('jumping');
+        // Start all at the volcano mouth (bottom center)
+        d.x = 880 + (Math.random() - 0.5) * 160;
+        d.y = 1080;
+        d.boomVy = -(18 + Math.random() * 16); // massive upward blast, staggered
+        d.boomVx = (Math.random() - 0.5) * 12; // fan out horizontally
+        d.boomRot = 0;
+        d.boomRotSpeed = (Math.random() - 0.5) * 10;
+        d.fightPhase = Math.random() * 7; // for wind drift variation
+      });
+      eventTimer = setTimeout(endEvent, 30000);
+    }
+
+    // --- CONFETTI (Salto) ---
+    function triggerConfetti() {
+      if (isEventActive()) return;
+      if (drawings.length < 2) { logConsole('confetti','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'confetti'; rainMode = false;
+      logConsole('confetti', `🎊🎊🎊 SALTO — ${drawings.length} dibujos como papel picado, 30s`);
+      drawings.forEach(d => {
+        if (d.el.classList.contains('showcase')||d.el.classList.contains('waiting')||d.el.classList.contains('spiral-to-lane')) return;
+        d.el.classList.remove('jumping');
+        // Spread across the full width, start from bottom
+        d.x = Math.random() * 1800;
+        d.y = 950;
+        d.boomVy = -(12 + Math.random() * 18); // strong upward launch
+        d.boomVx = (Math.random() - 0.5) * 10;
+        d.boomRot = 0;
+        d.boomRotSpeed = (Math.random() - 0.5) * 14; // lots of spin
+        d.fightPhase = Math.random() * 7;
       });
       eventTimer = setTimeout(endEvent, 30000);
     }
@@ -883,13 +983,15 @@
           return;
         }
         // Pick a random event
-        const events = ['boom', 'pogo', 'fight'];
+        const events = ['boom', 'pogo', 'fight', 'volcano', 'confetti'];
         const pick = events[Math.floor(Math.random()*events.length)];
         logConsole('event', `🎲 Evento aleatorio: <b>${pick.toUpperCase()}</b>`);
         
         if (pick === 'boom') triggerBoom();
         else if (pick === 'pogo') triggerPogo();
         else if (pick === 'fight') triggerFight();
+        else if (pick === 'volcano') triggerVolcano();
+        else if (pick === 'confetti') triggerConfetti();
 
         // Schedule next after this one ends
         // Wait for current event to finish + schedule
