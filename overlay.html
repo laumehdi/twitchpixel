@@ -665,11 +665,18 @@
           else if (activeEvent === 'pogo') { obj.boomVx=(Math.random()-0.5)*8; obj.boomVy=-(14+Math.random()*10); obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*10; }
           else if (activeEvent === 'volcano') { obj.x=880+(Math.random()-0.5)*160; obj.y=1080; obj.boomVy=-(18+Math.random()*16); obj.boomVx=(Math.random()-0.5)*12; obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*10; }
           else if (activeEvent === 'confetti') { obj.x=Math.random()*1800; obj.y=950; obj.boomVy=-(12+Math.random()*18); obj.boomVx=(Math.random()-0.5)*10; obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*14; }
-          else if (activeEvent === 'fight' && fightState && fightState.phase === 'fighting') {
-            obj.fightSide=Math.random()<0.5?'left':'right'; obj.fightDead=false;
+          else if (activeEvent === 'fight' && fightState) {
+            const side = Math.random()<0.5?'left':'right';
+            const team = side==='left'?fightState.leftTeam:fightState.rightTeam;
+            obj.fightSide=side; obj.fightDead=false;
             obj.fightHP=2+Math.floor(Math.random()*4); obj.fightMaxHP=obj.fightHP;
-            obj.fightSlotX=obj.fightSide==='left'?100+Math.random()*200:1550+Math.random()*200;
+            obj.fightSlotX=side==='left'?80+Math.random()*250:1550+Math.random()*200;
             obj.fightSlotY=150+Math.random()*650;
+            team.push(obj);
+            // Update team HP totals
+            if(side==='left'){fightState.leftTotalHP+=obj.fightHP;fightState.leftMaxHP+=obj.fightHP;}
+            else{fightState.rightTotalHP+=obj.fightHP;fightState.rightMaxHP+=obj.fightHP;}
+            logConsole('fight',`⚔️ <b>${obj.user}</b> se une al equipo ${side==='left'?'🔴':'🔵'} con ${obj.fightHP}hp`);
           }
         }
         
