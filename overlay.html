@@ -1,4 +1,42 @@
 <!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════
+  OVERLAY ALPHA GOLD V25 — SETUP
+  ═══════════════════════════════════════════════════════════════
+
+  URL del browser source en OBS:
+    overlay_v25.html?channel=laumehdi&channel_id=XXXXX&pubsub_token=YYYYY
+
+  ¿Dónde sacar cada dato?
+
+  CHANNEL_ID:
+    https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/
+
+  PUBSUB_TOKEN (scope: channel:read:redemptions + chat:read + chat:edit):
+    https://twitchtokengenerator.com/
+    Loguearse como la BROADCASTER, no el bot. Si expira, regenerar.
+
+  Recompensas de puntos de canal (nombres EXACTOS en el dashboard de Twitch):
+    "Haz Bailar tus Dibujos"  → baila los dibujos del usuario 8s
+    "Borrar mi Dibujo"        → borra el último dibujo del usuario
+    "Velocidad"               → sube velocidad 1 minuto
+    "Iniciar Pelea"           → fight global con equipos
+    "Boom"                    → explosión global
+    "Tornado"                 → remolino global
+    "Pogo"                    → rebote global
+    "Volcan"                  → erupción global
+    "Salto"                   → confetti/salto global
+    "Thriller"                → baile zombie
+    "Taiko"                   → coreografía sincronizada
+    "Lluvia"                  → activa/desactiva lluvia
+
+  Comandos IRC (chat):
+    !dibujar [código]         → cualquier usuario
+    !test                     → admin: modo test
+    !limpiar                  → admin: borrar todo/por usuario
+
+  ═══════════════════════════════════════════════════════════════
+-->
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -173,6 +211,8 @@
     .btn-confetti { background:#2aa198; color:#fdf6e3; }
     .btn-tornado { background:#6c71c4; color:#fdf6e3; }
     .btn-dance { background:#d33682; color:#fdf6e3; }
+    .btn-thriller { background:#859900; color:#fdf6e3; }
+    .btn-taiko { background:#cb4b16; color:#fdf6e3; }
     .btn-exit  { background:#586e75; color:#fdf6e3; }
     .btn-clear { background:#073642; color:#93a1a1; }
     .btn-speed.active { box-shadow: 0 0 0 2px #2aa198; }
@@ -206,6 +246,8 @@
     .log-line .tag-volcano { color:#b58900; }
     .log-line .tag-confetti { color:#2aa198; }
     .log-line .tag-tornado { color:#6c71c4; }
+    .log-line .tag-thriller { color:#859900; }
+    .log-line .tag-taiko { color:#cb4b16; }
     .log-line .tag-speed { color:#268bd2; }
     .log-line .tag-rain  { color:#6c71c4; }
     .log-line .tag-event { color:#2aa198; }
@@ -242,6 +284,8 @@
       <button class="btn-volcano" onclick="triggerVolcano()">🌋 Volcán</button>
       <button class="btn-confetti" onclick="triggerConfetti()">🎊 Salto</button>
       <button class="btn-tornado" onclick="triggerTornado()">🌪️ Tornado</button>
+      <button class="btn-thriller" onclick="triggerThriller()">🧟 Thriller</button>
+      <button class="btn-taiko" onclick="triggerTaiko()">🥁 Taiko</button>
       <button class="btn-dance" onclick="testDance()">💃 Bailar</button>
       <button class="btn-clear" onclick="removeAllDrawingsGlobal(); logConsole('info','Limpiado')">🗑️</button>
       <button class="btn-exit" onclick="toggleTest()">❌ Salir</button>
@@ -274,7 +318,7 @@
     let lastTime = performance.now();
 
     // === EVENT SYSTEM STATE ===
-    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | 'volcano' | 'confetti' | 'tornado' | null
+    let activeEvent = null; // 'boom' | 'pogo' | 'fight' | 'volcano' | 'confetti' | 'tornado' | 'thriller' | 'taiko' | null
     let eventTimer = null;
     let fightState = null;
 
@@ -563,6 +607,85 @@
           continue;
         }
 
+        // === THRILLER (Zombie dance) ===
+        if (activeEvent === 'thriller') {
+          d.el.style.opacity = 1;
+          const elapsed = (now - d.tornadoStart) / 1000;
+          
+          // Slow zombie drift — all shuffling in same direction, wrapping around
+          d.x += 0.7 * dt * d.thrillerDir;
+          if (d.x > 1950) d.x = -150;
+          if (d.x < -200) d.x = 1900;
+          
+          // Zombie lurch — uneven, jerky forward-back motion
+          const lurch = Math.sin(elapsed * 1.2 + d.fightPhase) * 15;
+          const stumble = Math.sin(elapsed * 0.4 + d.fightPhase * 3) * 30;
+          const yBase = d.thrillerY + stumble;
+          
+          // Tilted lean — zombies lean forward, occasionally jerk upright
+          const tilt = 8 + Math.sin(elapsed * 1.8 + d.fightPhase * 2) * 12;
+          
+          // Spasmodic twitch every few seconds
+          const twitch = (Math.sin(elapsed * 7 + d.fightPhase * 5) > 0.92) ? 
+            (Math.random() - 0.5) * 20 : 0;
+          
+          // Arms-out stretch effect via scaleX
+          const stretch = 1 + Math.sin(elapsed * 0.9 + d.fightPhase) * 0.08;
+          
+          d.el.style.transform = `translate3d(${d.x + lurch}px,${yBase}px,0) rotate(${tilt + twitch}deg) scaleX(${stretch.toFixed(2)})`;
+          continue;
+        }
+
+        // === TAIKO (Synchronized dance) ===
+        if (activeEvent === 'taiko') {
+          d.el.style.opacity = 1;
+          const elapsed = (now - d.tornadoStart) / 1000;
+          
+          // All drawings use the SAME time-based animation — perfectly synchronized
+          // The beat cycle is 2 seconds
+          const beat = (elapsed % 2) / 2; // 0 to 1 repeating
+          
+          // Formation: drawings line up evenly across the screen
+          const targetX = d.taikoSlotX;
+          d.x += (targetX - d.x) * 0.05 * dt;
+          
+          // Synchronized moves — all do the same thing at the same time
+          let yOff = 0, rot = 0, scX = 1, scY = 1;
+          
+          if (beat < 0.15) {
+            // JUMP UP — everybody jumps
+            const jumpProgress = beat / 0.15;
+            yOff = -Math.sin(jumpProgress * Math.PI) * 80;
+          } else if (beat < 0.25) {
+            // LAND — squash
+            const squashProgress = (beat - 0.15) / 0.1;
+            scY = 1 - (1 - squashProgress) * 0.3;
+            scX = 1 + (1 - squashProgress) * 0.15;
+          } else if (beat < 0.45) {
+            // LEAN LEFT
+            const leanProgress = (beat - 0.25) / 0.2;
+            rot = -Math.sin(leanProgress * Math.PI) * 25;
+          } else if (beat < 0.65) {
+            // LEAN RIGHT
+            const leanProgress = (beat - 0.45) / 0.2;
+            rot = Math.sin(leanProgress * Math.PI) * 25;
+          } else if (beat < 0.80) {
+            // WIGGLE — fast small oscillation
+            const wiggleProgress = (beat - 0.65) / 0.15;
+            rot = Math.sin(wiggleProgress * Math.PI * 6) * 12;
+            scX = 1 + Math.sin(wiggleProgress * Math.PI * 6) * 0.1;
+          } else {
+            // STRETCH UP — everybody reaches for the sky
+            const stretchProgress = (beat - 0.80) / 0.2;
+            scY = 1 + Math.sin(stretchProgress * Math.PI) * 0.25;
+            yOff = -Math.sin(stretchProgress * Math.PI) * 30;
+          }
+          
+          const baseY = d.taikoSlotY;
+          d.el.style.transform = `translate3d(${d.x}px,${baseY + yOff}px,0) rotate(${rot}deg) scale(${scX.toFixed(2)},${scY.toFixed(2)})`;
+          continue;
+        }
+
         // === FIGHT ===
         if (activeEvent === 'fight') {
           if (d.fightDead) { d.el.style.opacity = 0; continue; }
@@ -705,6 +828,8 @@
       'Pogo':                   (user) => { logConsole('pubsub', `🦘 <b>${user}</b> canjeó POGO`); queueOrRun('pogo', triggerPogo); },
       'Volcan':                 (user) => { logConsole('pubsub', `🌋 <b>${user}</b> canjeó VOLCÁN`); queueOrRun('volcano', triggerVolcano); },
       'Salto':                  (user) => { logConsole('pubsub', `🎊 <b>${user}</b> canjeó SALTO`); queueOrRun('confetti', triggerConfetti); },
+      'Thriller':               (user) => { logConsole('pubsub', `🧟 <b>${user}</b> canjeó THRILLER`); queueOrRun('thriller', triggerThriller); },
+      'Taiko':                  (user) => { logConsole('pubsub', `🥁 <b>${user}</b> canjeó TAIKO`); queueOrRun('taiko', triggerTaiko); },
       'Lluvia':                 (user) => { logConsole('pubsub', `🌧️ <b>${user}</b> canjeó LLUVIA`); toggleRain(); },
     };
 
@@ -846,7 +971,7 @@
         itemEl.style.zIndex=Z_INDEXES[laneIdx];
         document.getElementById('container').appendChild(itemEl);
 
-        let obj={el:itemEl,user,code:fullCode,lane:laneIdx,speed:SPEEDS[laneIdx],y:LANES[laneIdx],x:forceX||-400,isTest,dying:false,vy:0,rot:0,rainOriginX:0,rainSpeed:1,rainPhase:0,loops:0,boomVx:0,boomVy:0,boomRot:0,boomRotSpeed:0,fightSide:null,fightSlotX:0,fightSlotY:0,fightPhase:Math.random()*7,fightDead:false,tornadoAngle:0,tornadoRadius:0,tornadoStart:0};
+        let obj={el:itemEl,user,code:fullCode,lane:laneIdx,speed:SPEEDS[laneIdx],y:LANES[laneIdx],x:forceX||-400,isTest,dying:false,vy:0,rot:0,rainOriginX:0,rainSpeed:1,rainPhase:0,loops:0,boomVx:0,boomVy:0,boomRot:0,boomRotSpeed:0,fightSide:null,fightSlotX:0,fightSlotY:0,fightPhase:Math.random()*7,fightDead:false,tornadoAngle:0,tornadoRadius:0,tornadoStart:0,thrillerDir:1,thrillerY:400,taikoSlotX:0,taikoSlotY:450};
         if(forceX===undefined) obj.x=Math.min(-200, getMinXInLane(laneIdx,null)-350);
         obj.rainOriginX=obj.x;
         drawings.push(obj);
@@ -860,6 +985,8 @@
           else if (activeEvent === 'volcano') { obj.x=880+(Math.random()-0.5)*160; obj.y=1080; obj.boomVy=-(18+Math.random()*16); obj.boomVx=(Math.random()-0.5)*12; obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*10; }
           else if (activeEvent === 'confetti') { obj.x=Math.random()*1800; obj.y=950; obj.boomVy=-(12+Math.random()*18); obj.boomVx=(Math.random()-0.5)*10; obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*14; }
           else if (activeEvent === 'tornado') { obj.tornadoAngle=Math.random()*Math.PI*2; obj.tornadoRadius=300+Math.random()*400; obj.tornadoStart=Date.now()-5000; obj.boomRot=0; obj.fightPhase=Math.random()*7; }
+          else if (activeEvent === 'thriller') { obj.tornadoStart=Date.now(); obj.fightPhase=Math.random()*7; obj.thrillerDir=(Math.random()>0.5)?1:-1; obj.thrillerY=200+Math.random()*600; obj.x=Math.random()*1800; }
+          else if (activeEvent === 'taiko') { obj.tornadoStart=Date.now()-2000; const count=drawings.length; const sp=Math.min(200,1700/count); const sx=960-(count-1)*sp/2; drawings.forEach((dd,ii)=>{dd.taikoSlotX=sx+ii*sp;}); obj.taikoSlotY=450; }
           else if (activeEvent === 'fight' && fightState) {
             const side = Math.random()<0.5?'left':'right';
             const team = side==='left'?fightState.leftTeam:fightState.rightTeam;
@@ -908,6 +1035,8 @@
             else if (activeEvent==='volcano') { cur.x=880+(Math.random()-0.5)*160; cur.y=1080; cur.boomVy=-(18+Math.random()*16); cur.boomVx=(Math.random()-0.5)*12; cur.boomRot=0; cur.boomRotSpeed=(Math.random()-0.5)*10; }
             else if (activeEvent==='confetti') { cur.x=Math.random()*1800; cur.y=950; cur.boomVy=-(12+Math.random()*18); cur.boomVx=(Math.random()-0.5)*10; cur.boomRot=0; cur.boomRotSpeed=(Math.random()-0.5)*14; }
             else if (activeEvent==='tornado') { cur.tornadoAngle=Math.random()*Math.PI*2; cur.tornadoRadius=200; cur.tornadoStart=Date.now()-5000; cur.boomRot=0; cur.fightPhase=Math.random()*7; }
+            else if (activeEvent==='thriller') { cur.tornadoStart=Date.now(); cur.fightPhase=Math.random()*7; cur.thrillerDir=(Math.random()>0.5)?1:-1; cur.thrillerY=200+Math.random()*600; cur.x=Math.random()*1800; }
+            else if (activeEvent==='taiko') { cur.tornadoStart=Date.now()-2000; const cnt=drawings.length; const sp2=Math.min(200,1700/cnt); const sx2=960-(cnt-1)*sp2/2; drawings.forEach((dd,ii)=>{dd.taikoSlotX=sx2+ii*sp2;}); cur.taikoSlotY=450; }
             else if (activeEvent==='fight') {
               cur.fightSide = Math.random()<0.5?'left':'right';
               cur.fightSlotX = cur.fightSide==='left'?100+Math.random()*150:1650+Math.random()*150;
@@ -934,6 +1063,8 @@
                 else if(activeEvent==='volcano'){cur.x=880+(Math.random()-0.5)*160;cur.y=1080;cur.boomVy=-(18+Math.random()*16);cur.boomVx=(Math.random()-0.5)*12;cur.boomRot=0;cur.boomRotSpeed=(Math.random()-0.5)*10;}
                 else if(activeEvent==='confetti'){cur.x=Math.random()*1800;cur.y=950;cur.boomVy=-(12+Math.random()*18);cur.boomVx=(Math.random()-0.5)*10;cur.boomRot=0;cur.boomRotSpeed=(Math.random()-0.5)*14;}
                 else if(activeEvent==='tornado'){cur.tornadoAngle=Math.random()*Math.PI*2;cur.tornadoRadius=200;cur.tornadoStart=Date.now()-5000;cur.boomRot=0;cur.fightPhase=Math.random()*7;}
+                else if(activeEvent==='thriller'){cur.tornadoStart=Date.now();cur.fightPhase=Math.random()*7;cur.thrillerDir=(Math.random()>0.5)?1:-1;cur.thrillerY=200+Math.random()*600;cur.x=Math.random()*1800;}
+                else if(activeEvent==='taiko'){cur.tornadoStart=Date.now()-2000;const cnt3=drawings.length;const sp3=Math.min(200,1700/cnt3);const sx3=960-(cnt3-1)*sp3/2;drawings.forEach((dd,ii)=>{dd.taikoSlotX=sx3+ii*sp3;});cur.taikoSlotY=450;}
               } else { cur.el.classList.add('jumping'); cur.loops=0; }
               logConsole('sub',`✅ <b>${cur.user}</b> aterrizó`);
               isShowcaseBusy=false; processQueue();
@@ -1065,6 +1196,48 @@
         d.tornadoStart = startTime;
         d.boomRot = 0;
         d.fightPhase = Math.random() * 7;
+      });
+      eventTimer = setTimeout(endEvent, 30000);
+    }
+
+    // --- THRILLER ---
+    function triggerThriller() {
+      if (activeEvent === 'thriller') { endEvent(); return; }
+      if (isEventActive()) endEvent();
+      if (drawings.length < 2) { logConsole('thriller','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'thriller'; rainMode = false;
+      forceAllSubsToEvent();
+      const startTime = Date.now();
+      logConsole('thriller', `🧟🧟🧟 THRILLER — ${drawings.length} zombies arrastrándose, 30s`);
+      drawings.forEach((d, i) => {
+        d.el.classList.remove('jumping');
+        d.tornadoStart = startTime;
+        d.fightPhase = Math.random() * 7;
+        d.thrillerDir = (Math.random() > 0.5) ? 1 : -1; // some go left, some right
+        d.thrillerY = 200 + Math.random() * 600; // spread across screen height
+        d.x = Math.random() * 1800;
+      });
+      eventTimer = setTimeout(endEvent, 30000);
+    }
+
+    // --- TAIKO ---
+    function triggerTaiko() {
+      if (activeEvent === 'taiko') { endEvent(); return; }
+      if (isEventActive()) endEvent();
+      if (drawings.length < 2) { logConsole('taiko','Necesitás al menos 2 dibujos'); return; }
+      activeEvent = 'taiko'; rainMode = false;
+      forceAllSubsToEvent();
+      const startTime = Date.now();
+      logConsole('taiko', `🥁🥁🥁 TAIKO — ${drawings.length} dibujos bailando sincronizados, 30s`);
+      const count = drawings.length;
+      const spacing = Math.min(200, 1700 / count);
+      const startX = 960 - (count - 1) * spacing / 2;
+      drawings.forEach((d, i) => {
+        d.el.classList.remove('jumping');
+        d.tornadoStart = startTime;
+        d.taikoSlotX = startX + i * spacing;
+        d.taikoSlotY = 450; // all at same height
+        d.x = d.taikoSlotX;
       });
       eventTimer = setTimeout(endEvent, 30000);
     }
