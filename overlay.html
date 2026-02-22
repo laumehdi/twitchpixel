@@ -659,21 +659,10 @@
       const cmd = args[0].toLowerCase();
       const argT = args[1] ? args[1].replace('@','').toLowerCase() : null;
 
+      // Dibujar — cualquier usuario
       if (cmd === '!dibujar' && args[1]) createDrawing(user, args[1], isSub, false);
-      else if (cmd === '!borrar') { if(isAdmin&&argT) removeLastDrawing(argT); else removeLastDrawing(user); }
-      else if (cmd === '!limpiar') { if(isAdmin&&argT) removeAllDrawingsForUser(argT); else if(isAdmin) removeAllDrawingsGlobal(); else removeAllDrawingsForUser(user); }
+      // Admin only — modo test
       else if (cmd === '!test' && isAdmin) toggleTest();
-      else if (cmd === '!fin' && isAdmin) toggleRain();
-      else if (cmd === '!boom' && isAdmin) triggerBoom();
-      else if (cmd === '!pogo' && isAdmin) triggerPogo();
-      else if (cmd === '!fight' && isAdmin) triggerFight();
-      else if (cmd === '!volcan' && isAdmin) triggerVolcano();
-      else if (cmd === '!salto' && isAdmin) triggerConfetti();
-      else if (cmd === '!tornado' && isAdmin) triggerTornado();
-      else if (cmd === '!velocidad' && isAdmin) {
-        if (args[1]==='1') { globalSpeedMultiplier=0.54; logConsole('speed','Vel → 1'); }
-        else if (args[1]==='2') { globalSpeedMultiplier=1.0; logConsole('speed','Vel → 2'); }
-      }
     }
 
     // ==============================================================
@@ -681,6 +670,12 @@
     // ==============================================================
     const REWARD_MAP = {
       'Haz Bailar tus Dibujos': (user) => triggerUserDance(user),
+      'Borrar mi Dibujo':       (user) => { removeLastDrawing(user); logConsole('pubsub', `🗑️ <b>${user}</b> borró su último dibujo`); },
+      'Velocidad':              (user) => {
+        globalSpeedMultiplier = 1.8;
+        logConsole('pubsub', `🚀 <b>${user}</b> canjeó VELOCIDAD — 1 minuto a toda máquina!`);
+        setTimeout(() => { globalSpeedMultiplier = 0.54; logConsole('pubsub', `🐢 Velocidad volvió a la normalidad`); }, 60000);
+      },
       'Iniciar Pelea':          (user) => { logConsole('pubsub', `⚔️ <b>${user}</b> canjeó PELEA`); triggerFight(); },
       'Boom':                   (user) => { logConsole('pubsub', `💥 <b>${user}</b> canjeó BOOM`); triggerBoom(); },
       'Tornado':                (user) => { logConsole('pubsub', `🌪️ <b>${user}</b> canjeó TORNADO`); triggerTornado(); },
