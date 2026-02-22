@@ -676,7 +676,8 @@
         if(!isTest) activeCodes.add(fullCode);
         
         // If an event is active and this is NOT a sub (subs go to showcase first), join the event
-        if (isEventActive() && !isSub) {
+// Si hay un evento activo, TODOS (incluidos los subs) se unen directo sin bailar
+        if (isEventActive()) {
           obj.el.classList.remove('jumping');
           if (activeEvent === 'boom') { assignBoomPhysics(obj); }
           else if (activeEvent === 'pogo') { obj.boomVx=(Math.random()-0.5)*8; obj.boomVy=-(14+Math.random()*10); obj.boomRot=0; obj.boomRotSpeed=(Math.random()-0.5)*10; }
@@ -690,14 +691,23 @@
             obj.fightSlotX=side==='left'?80+Math.random()*250:1550+Math.random()*200;
             obj.fightSlotY=150+Math.random()*650;
             team.push(obj);
-            // Update team HP totals
+            
+            // Actualizar HP totales
             if(side==='left'){fightState.leftTotalHP+=obj.fightHP;fightState.leftMaxHP+=obj.fightHP;}
             else{fightState.rightTotalHP+=obj.fightHP;fightState.rightMaxHP+=obj.fightHP;}
+            
+            // Actualizar barras y textos de la UI en vivo por si entra a mitad de la pelea
+            document.getElementById('hp-left').style.width = Math.max(0, fightState.leftTotalHP / fightState.leftMaxHP * 100) + '%';
+            document.getElementById('hp-right').style.width = Math.max(0, fightState.rightTotalHP / fightState.rightMaxHP * 100) + '%';
+            document.getElementById('hp-label-left').textContent = `🔴 EQUIPO ROJO (${fightState.leftTeam.filter(d=>!d.fightDead).length})`;
+            document.getElementById('hp-label-right').textContent = `🔵 EQUIPO AZUL (${fightState.rightTeam.filter(d=>!d.fightDead).length})`;
+            
             logConsole('fight',`⚔️ <b>${obj.user}</b> se une al equipo ${side==='left'?'🔴':'🔵'} con ${obj.fightHP}hp`);
           }
         }
         
-        if(isSub){subQueue.push(obj);processQueue();}
+// Si es sub y NO hay un evento activo, va a la cola de baile
+        if(isSub && !isEventActive()){subQueue.push(obj);processQueue();}
         logConsole(isSub?'sub':'user',`<b>${user}</b> → carril ${laneIdx+1} (${isSub?'SUB':'normal'})`);
       } catch(e){console.error(e);}
     }
