@@ -223,6 +223,14 @@
     }
     #output.copied { background: #28a745 !important; color: white !important; border-color: #1e7e34; }
 
+    /* Glow al actualizar el código (exportar / cambiar paleta) */
+    @keyframes outputGlow {
+      0%   { box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 0 0 rgba(145,70,255,0); border-color: var(--border-color); }
+      15%  { box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 16px 3px rgba(145,70,255,0.9); border-color: var(--twitch-color); }
+      100% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 0 0 rgba(145,70,255,0); border-color: var(--border-color); }
+    }
+    #output.flash-glow { animation: outputGlow 1s ease-out; }
+
     /* MÓVIL (Correcciones finales) */
     @media (max-width: 600px) {
       body { height: 100vh; padding: 10px; padding-bottom: 20px; justify-content: flex-start; }
@@ -314,7 +322,7 @@
           <button onclick="undo()" style="background:#6c757d; flex:0.5;" title="Deshacer (Ctrl+Z)">↩</button>
           <button onclick="redo()" style="background:#6c757d; flex:0.5;" title="Rehacer (Ctrl+Y)">↪</button>
           <button onclick="clearCanvas()" style="background:#dc3545">Borrar</button>
-          <button onclick="generateCodeAndSave()">Exportar</button>
+          <button onclick="generateCodeAndSave()">Exportar y Guardar</button>
           <button onclick="downloadPNG()" style="background:#28a745; flex:0.5;" title="Guardar PNG">💾</button>
         </div>
 
@@ -453,8 +461,6 @@
       if (content.classList.contains('show')) {
          content.classList.remove('show'); arrow.classList.remove('rotate-icon');
       } else {
-         document.querySelectorAll('.dropdown-content').forEach(el => el.classList.remove('show'));
-         document.querySelectorAll('.arrow-icon').forEach(el => el.classList.remove('rotate-icon'));
          content.classList.add('show'); arrow.classList.add('rotate-icon');
          if(id === 'history') renderHistory();
       }
@@ -497,7 +503,7 @@
       cells.forEach(c => updateVisual(c));
       updatePreview(); // Actualizar preview al cambiar paleta
       // Si ya se exportó al menos una vez, el código depende de los colores de la
-      // paleta, así que se regenera y se muestra "CÓDIGO GENERADO".
+      // paleta, así que se regenera y el campo se resalta con un glow.
       if (hasExported && !suppressGen) { regenerateCode(); }
     }
 
@@ -617,19 +623,18 @@
       return "!dibujar " + version + header + "_" + btoa(binString);
     }
 
-    // Muestra "CÓDIGO GENERADO" como confirmación y luego revela el código en el campo.
-    function showGeneratedMessage(code) {
+    // Muestra el código en el campo y lo resalta con un breve glow para indicar
+    // que el texto fue actualizado (sin tapar el código con ningún mensaje).
+    function showCode(code) {
       const out = document.getElementById('output');
-      clearTimeout(out._genTimer);
-      out.value = "✅ CÓDIGO GENERADO";
-      out.style.color = "#28a745";
-      out._genTimer = setTimeout(() => {
-        out.value = code;
-        out.style.color = "";
-      }, 1300);
+      out.value = code;
+      out.style.color = "";
+      out.classList.remove('flash-glow');
+      void out.offsetWidth; // fuerza reflow para reiniciar la animación en cada llamada
+      out.classList.add('flash-glow');
     }
 
-    // Botón "Exportar": siempre muestra "CÓDIGO GENERADO" (y guarda en historial).
+    // Botón "Exportar": genera el código (y lo guarda en historial).
     function generateCodeAndSave() {
       try { saveDrawing(); } catch(e) { console.warn("No se pudo guardar en historial:", e); }
 
@@ -648,7 +653,7 @@
       }
 
       hasExported = true;
-      showGeneratedMessage(code);
+      showCode(code);
     }
 
     // Regenera el código tras un cambio de paleta (sin volver a guardar en historial).
@@ -656,12 +661,11 @@
       let code;
       try { code = buildCode(); } catch(e) { return; }
       if (!code) return;
-      showGeneratedMessage(code);
+      showCode(code);
     }
 
     function showStatusMessage(msg, isError = false) {
         const out = document.getElementById('output');
-        clearTimeout(out._genTimer);
         out.value = msg;
         out.style.color = isError ? '#dc3545' : '#28a745'; 
         setTimeout(() => { if (out.value === msg) { out.value = ""; out.style.color = ""; } }, 1500);
@@ -764,8 +768,7 @@
         pushUndo();
         cells.forEach(c => { c.dataset.idx="0"; updateVisual(c); }); 
         const out = document.getElementById('output');
-        clearTimeout(out._genTimer);
-        out.value=""; out.style.color="";
+        out.value=""; out.style.color=""; out.classList.remove('flash-glow');
         hasExported = false;
         updatePreview(); // Limpiar preview también
       } 
